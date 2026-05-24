@@ -629,3 +629,154 @@
 
       // World bounds
       if (player.y > canvas.height) {
+        loseLife();
+      }
+      if (player.x < -50) player.x = -50;
+      if (player.x > canvas.width + 50) player.x = canvas.width + 50;
+
+      // Enemies movement
+      for (const e of enemies) {
+        e.x += e.dir * e.speed;
+        if (Math.abs(e.x - e.originX) > e.range) {
+          e.dir *= -1;
+        }
+      }
+
+      // Collisions with enemies
+      for (const e of enemies) {
+        if (rectsOverlap(player, e)) {
+          loseLife();
+          break;
+        }
+      }
+
+      // Collisions with spikes
+      for (const s of spikes) {
+        if (rectsOverlap(player, s)) {
+          loseLife();
+          break;
+        }
+      }
+
+      // Collisions with math portals
+      let allSolved = true;
+      for (const m of mathPortals) {
+        if (!m.solved && rectsOverlap(player, m)) {
+          openMathDialog(m);
+          break;
+        }
+        if (!m.solved) allSolved = false;
+      }
+
+      if (allSolved && mathPortals.length > 0) {
+        // If all portals solved, level complete
+        showLevelComplete();
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Background hills
+      ctx.fillStyle = '#5bb85b';
+      ctx.beginPath();
+      ctx.arc(150, 420, 120, Math.PI, 2 * Math.PI);
+      ctx.arc(420, 430, 160, Math.PI, 2 * Math.PI);
+      ctx.arc(750, 410, 140, Math.PI, 2 * Math.PI);
+      ctx.fill();
+
+      // Platforms
+      for (const p of platforms) {
+        const grad = ctx.createLinearGradient(p.x, p.y, p.x, p.y + p.h);
+        grad.addColorStop(0, '#8b5a2b');
+        grad.addColorStop(1, '#5a3a1a');
+        ctx.fillStyle = grad;
+        ctx.fillRect(p.x, p.y, p.w, p.h);
+
+        ctx.fillStyle = '#3f8f3f';
+        ctx.fillRect(p.x, p.y - 6, p.w, 8);
+      }
+
+      // Spikes
+      for (const s of spikes) {
+        const spikeCount = Math.floor(s.w / 10);
+        ctx.fillStyle = '#ccc';
+        for (let i = 0; i < spikeCount; i++) {
+          const sx = s.x + i * 10;
+          ctx.beginPath();
+          ctx.moveTo(sx, s.y + s.h);
+          ctx.lineTo(sx + 5, s.y);
+          ctx.lineTo(sx + 10, s.y + s.h);
+          ctx.closePath();
+          ctx.fill();
+        }
+      }
+
+      // Enemies
+      for (const e of enemies) {
+        ctx.fillStyle = '#e74c3c';
+        ctx.fillRect(e.x, e.y, e.w, e.h);
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(e.x + 6, e.y + 8, 6, 6);
+        ctx.fillRect(e.x + e.w - 12, e.y + 8, 6, 6);
+        ctx.fillStyle = '#000';
+        ctx.fillRect(e.x + 8, e.y + 10, 2, 2);
+        ctx.fillRect(e.x + e.w - 10, e.y + 10, 2, 2);
+      }
+
+      // Math portals
+      for (const m of mathPortals) {
+        const grad = ctx.createRadialGradient(
+          m.x + m.w / 2, m.y + m.h / 2, 5,
+          m.x + m.w / 2, m.y + m.h / 2, 30
+        );
+        grad.addColorStop(0, m.solved ? '#4cd964' : '#4ec0ff');
+        grad.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(m.x + m.w / 2, m.y + m.h / 2, 24, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.strokeStyle = m.solved ? '#4cd964' : '#4ec0ff';
+        ctx.lineWidth = 3;
+        ctx.strokeRect(m.x, m.y, m.w, m.h);
+      }
+
+      // Player
+      ctx.fillStyle = '#ffdd55';
+      ctx.fillRect(player.x, player.y, player.w, player.h);
+      ctx.fillStyle = '#f39c12';
+      ctx.fillRect(player.x, player.y + player.h - 10, player.w, 10);
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(player.x + 6, player.y + 8, 6, 6);
+      ctx.fillRect(player.x + player.w - 12, player.y + 8, 6, 6);
+      ctx.fillStyle = '#000';
+      ctx.fillRect(player.x + 8, player.y + 10, 2, 2);
+      ctx.fillRect(player.x + player.w - 10, player.y + 10, 2, 2);
+    }
+
+    function loop() {
+      update();
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    // ====== START BUTTON ======
+    btnStart.addEventListener('click', () => {
+      currentTopic = topicSelect.value;
+      currentGrade = parseInt(gradeSelect.value, 10);
+      const startIndex = parseInt(startLevelSelect.value, 10);
+      lives = MAX_LIVES;
+      loadLevel(startIndex);
+      startScreen.style.display = 'none';
+      gameOverScreen.style.display = 'none';
+      levelCompleteScreen.style.display = 'none';
+      gameRunning = true;
+    });
+
+    // Start loop
+    loadLevel(0);
+    loop();
+  </script>
+</body>
+</html>
