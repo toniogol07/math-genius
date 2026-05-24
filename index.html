@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8" />
+  <title>Math Genius – Platformer</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, sans-serif;
+      background: linear-gradient(#4ec0ff, #87e0ff);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    #game-container {
+      position: relative;
+      width: 960px;
+      height: 540px;
+      background: linear-gradient(#6bd16b 40%, #3b2b1a 40%);
+      border-radius: 12px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.35);
+      overflow: hidden;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(#6bd16b 40%, #3b2b1a 40%);
+    }
+
+    /* HUD */
+    #hud {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      right: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: #fff;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.6);
+      font-size: 14px;
+      pointer-events: none;
+    }
+
+    #hud .lives span {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      margin-right: 4px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, #fffc, #f33);
+      box-shadow: 0 0 6px rgba(0,0,0,0.6);
+    }
+
+    #hud .badge {
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(0,0,0,0.35);
+      border: 1px solid rgba(255,255,255,0.4);
+      backdrop-filter: blur(4px);
+    }
+
+    /* Start menu */
+    #start-screen, #math-dialog, #game-over-screen, #level-complete-screen {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background: radial-gradient(circle at top, rgba(255,255,255,0.25), rgba(0,0,0,0.75));
+      color: #fff;
+    }
+
+    .panel {
+      background: rgba(0,0,0,0.75);
+      padding: 24px 32px;
+      border-radius: 16px;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.6);
+      min-width: 320px;
+    }
+
+    .panel h1, .panel h2 {
+      margin-bottom: 12px;
+      text-align: center;
+    }
+
+    .panel label {
+      display: block;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+
+    .panel select, .panel input[type="number"] {
+      width: 100%;
+      margin-top: 4px;
+      padding: 6px 8px;
+      border-radius: 8px;
+      border: 1px solid #555;
+      background: #222;
+      color: #fff;
+    }
+
+    .btn-row {
+      margin-top: 18px;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    button {
+      padding: 8px 18px;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      background: linear-gradient(135deg, #ffb347, #ff6b6b);
+      color: #222;
+      box-shadow: 0 6px 14px rgba(0,0,0,0.5);
+      transition: transform 0.1s, box-shadow 0.1s, filter 0.1s;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 18px rgba(0,0,0,0.6);
+      filter: brightness(1.05);
+    }
+
+    button:active {
+      transform: translateY(1px);
+      box-shadow: 0 3px 8px rgba(0,0,0,0.7);
+      filter: brightness(0.95);
+    }
+
+    /* Math dialog */
+    #math-dialog .question {
+      margin-top: 10px;
+      font-size: 16px;
+      text-align: center;
+    }
+
+    #math-dialog input[type="number"] {
+      margin-top: 10px;
+    }
+
+    #math-dialog .feedback {
+      margin-top: 8px;
+      min-height: 18px;
+      font-size: 13px;
+      text-align: center;
+    }
+
+    #game-over-screen h1,
+    #level-complete-screen h1 {
+      margin-bottom: 8px;
+    }
+
+  </style>
+</head>
+<body>
+  <div id="game-container">
+    <canvas id="game" width="960" height="540"></canvas>
+
+    <div id="hud">
+      <div class="lives" id="lives"></div>
+      <div class="badge" id="hud-info"></div>
+      <div class="badge" id="hud-level"></div>
+    </div>
+
+    <!-- Start screen -->
+    <div id="start-screen">
+      <div class="panel">
+        <h1>Math Genius</h1>
+        <p style="text-align:center; font-size:13px; opacity:0.9;">
+          Løs matematikopgaver for at klare banerne – undgå monstre og forhindringer!
+        </p>
+
+        <label for="topic">Matematisk emne</label>
+        <select id="topic">
+          <option value="add">Addition</option>
+          <option value="sub">Subtraktion</option>
+          <option value="mul">Multiplikation</option>
+          <option value="div">Division</option>
+        </select>
+
+        <label for="grade">Årgang / sværhedsgrad</label>
+        <select id="grade">
+          <option value="1">1. klasse</option>
+          <option value="2">2. klasse</option>
+          <option value="3">3. klasse</option>
+          <option value="4">4. klasse</option>
+          <option value="5">5. klasse</option>
+          <option value="6">6. klasse</option>
+        </select>
+
+        <label for="start-level">Start level</label>
+        <select id="start-level">
+          <option value="0">Level 1</option>
+          <option value="1">Level 2</option>
+          <option value="2">Level 3</option>
+        </select>
+
+        <div class="btn-row">
+          <button id="btn-start">Start spil</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Math question dialog -->
+    <div id="math-dialog" style="display:none;">
+      <div class="panel">
+        <h2>Matematik udfordring</h2>
+        <div class="question" id="math-question"></div>
+        <input type="number" id="math-answer" />
+        <div class="feedback" id="math-feedback"></div>
+        <div class="btn-row">
+          <button id="btn-submit-answer">Svar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Game over -->
+    <div id="game-over-screen" style="display:none;">
+      <div class="panel">
+        <h1>Game Over</h1>
+        <p style="text-align:center; margin-top:6px;">Du løb tør for liv.</p>
+        <div class="btn-row">
+          <button id="btn-restart">Til startskærm</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Level complete -->
+    <div id="level-complete-screen" style="display:none;">
+      <div class="panel">
+        <h1>Level gennemført!</h1>
+        <p id="level-complete-text" style="text-align:center; margin-top:6px;"></p>
+        <div class="btn-row">
+          <button id="btn-next-level">Næste level</button>
+          <button id="btn-back-menu">Til startskærm</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // ====== GAME CONFIG ======
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+
+    const startScreen = document.getElementById('start-screen');
+    const mathDialog = document.getElementById('math-dialog');
+    const gameOverScreen = document.getElementById('game-over-screen');
+    const levelCompleteScreen = document.getElementById('level-complete-screen');
+
+    const btnStart = document.getElementById('btn-start');
+    const btnSubmitAnswer = document.getElementById('btn-submit-answer');
+    const btnRestart = document.getElementById('btn-restart');
+    const btnNextLevel = document.getElementById('btn-next-level');
+    const btnBackMenu = document.getElementById('btn-back-menu');
+
+    const topicSelect = document.getElementById('topic');
+    const gradeSelect = document.getElementById('grade');
+    const startLevelSelect = document.getElementById('start-level');
+
+    const livesEl = document.getElementById('lives');
+    const hudInfoEl = document.getElementById('hud-info');
+    const hudLevelEl = document.getElementById('hud-level');
+
+    const mathQuestionEl = document.getElementById('math-question');
+    const mathAnswerEl = document.getElementById('math-answer');
+    const mathFeedbackEl = document.getElementById('math-feedback');
+    const levelCompleteTextEl = document.getElementById('level-complete-text');
+
+    const GRAVITY = 0.6;
+    const MOVE_SPEED = 4;
+    const JUMP_FORCE = -11;
+    const MAX_LIVES = 3;
+
+    let keys = {};
+    let gameRunning = false;
+    let currentTopic = 'add';
+    let currentGrade = 1;
+    let currentLevelIndex = 0;
+    let lives = MAX_LIVES;
+
+    let player;
+    let platforms = [];
+    let enemies = [];
+    let spikes = [];
+    let mathPortals = [];
+
+    let pendingMathPortal = null;
+    let currentQuestion = null;
+
+    // ====== LEVEL DATA ======
+    // Simple tile-like rectangles; you can expand this later.
+    const LEVELS = [
+      {
+        name: 'Level 1',
+        platforms: [
+          { x: 0, y: 480, w: 960, h: 60 },
+          { x: 150, y: 380, w: 160, h: 20 },
+          { x: 380, y: 320, w: 160, h: 20 },
+          { x: 620, y: 260, w: 160, h: 20 }
+        ],
+        enemies: [
+          { x: 260, y: 450, w: 32, h: 32, dir: -1, speed: 1.2, range: 80, originX: 260 },
+          { x: 420, y: 290, w: 32, h: 32, dir: 1, speed: 1.4, range: 70, originX: 420 }
+        ],
+        spikes: [
+          { x: 540, y: 460, w: 40, h: 20 },
+          { x: 580, y: 460, w: 40, h: 20 }
+        ],
+        mathPortals: [
+          { x: 650, y: 220, w: 40, h: 40, solved: false }
+        ]
+      },
+      {
+        name: 'Level 2',
+        platforms: [
+          { x: 0, y: 480, w: 960, h: 60 },
+          { x: 120, y: 400, w: 140, h: 20 },
+          { x: 320, y: 340, w: 140, h: 20 },
+          { x: 520, y: 280, w: 140, h: 20 },
+          { x: 720, y: 220, w: 140, h: 20 }
+        ],
+        enemies: [
+          { x: 130, y: 370, w: 32, h: 32, dir: 1, speed: 1.6, range: 90, originX: 130 },
+          { x: 330, y: 310, w: 32, h: 32, dir: -1, speed: 1.8, range: 100, originX: 330 },
+          { x: 530, y: 250, w: 32, h: 32, dir: 1, speed: 2.0, range: 110, originX: 530 }
+        ],
+        spikes: [
+          { x: 260, y: 460, w: 40, h: 20 },
+          { x: 300, y: 460, w: 40, h: 20 },
+          { x: 340, y: 460, w: 40, h: 20 }
+        ],
+        mathPortals: [
+          { x: 740, y: 180, w: 40, h: 40, solved: false }
+        ]
+      },
+      {
+        name: 'Level 3',
+        platforms: [
+          { x: 0, y: 480, w: 960, h: 60 },
+          { x: 160, y: 420, w: 120, h: 20 },
+          { x: 340, y: 360, w: 120, h: 20 },
+          { x: 520, y: 300, w: 120, h: 20 },
+          { x: 700, y: 240, w: 120, h: 20 },
+          { x: 880, y: 180, w: 80, h: 20 }
+        ],
+        enemies: [
+          { x: 170, y: 390, w: 32, h: 32, dir: 1, speed: 1.8, range: 100, originX: 170 },
+          { x: 350, y: 330, w: 32, h: 32, dir: -1, speed: 2.0, range: 110, originX: 350 },
+          { x: 530, y: 270, w: 32, h: 32, dir: 1, speed: 2.2, range: 120, originX: 530 },
+          { x: 710, y: 210, w: 32, h: 32, dir: -1, speed: 2.4, range: 130, originX: 710 }
+        ],
+        spikes: [
+          { x: 260, y: 460, w: 40, h: 20 },
+          { x: 300, y: 460, w: 40, h: 20 },
+          { x: 340, y: 460, w: 40, h: 20 },
+          { x: 380, y: 460, w: 40, h: 20 }
+        ],
+        mathPortals: [
+          { x: 890, y: 140, w: 40, h: 40, solved: false }
+        ]
+      }
+    ];
+
+    // ====== PLAYER OBJECT ======
+    function createPlayer() {
+      return {
+        x: 40,
+        y: 420,
+        w: 32,
+        h: 40,
+        vx: 0,
+        vy: 0,
+        onGround: false
+      };
+    }
+
+    // ====== INPUT ======
+    window.addEventListener('keydown', (e) => {
+      keys[e.key] = true;
+      if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'w') {
+        e.preventDefault();
+      }
+    });
+
+    window.addEventListener('keyup', (e) => {
+      keys[e.key] = false;
+    });
+
+    // ====== MATH QUESTION GENERATOR ======
+    function getRangeForGrade(grade) {
+      // Simple ranges; kan fint tweakes
+      switch (grade) {
+        case 1: return { min: 0, max: 10 };
+        case 2: return { min: 0, max: 20 };
+        case 3: return { min: 0, max: 50 };
+        case 4: return { min: 0, max: 100 };
+        case 5: return { min: 0, max: 200 };
+        case 6: return { min: 0, max: 500 };
+        default: return { min: 0, max: 20 };
+      }
+    }
+
+    function generateQuestion(topic, grade) {
+      const { min, max } = getRangeForGrade(grade);
+      let a = Math.floor(Math.random() * (max - min + 1)) + min;
+      let b = Math.floor(Math.random() * (max - min + 1)) + min;
+      let text = '';
+      let answer = 0;
+
+      if (topic === 'add') {
+        text = `${a} + ${b} = ?`;
+        answer = a + b;
+      } else if (topic === 'sub') {
+        if (b > a) [a, b] = [b, a];
+        text = `${a} - ${b} = ?`;
+        answer = a - b;
+      } else if (topic === 'mul') {
+        a = Math.floor(Math.random() * (Math.min(max, 12) + 1));
+        b = Math.floor(Math.random() * (Math.min(max, 12) + 1));
+        text = `${a} × ${b} = ?`;
+        answer = a * b;
+      } else if (topic === 'div') {
+        b = Math.floor(Math.random() * (Math.min(max, 12) - 1)) + 1;
+        answer = Math.floor(Math.random() * (Math.min(max, 12) + 1));
+        a = b * answer;
+        text = `${a} ÷ ${b} = ?`;
+      }
+
+      return { text, answer };
+    }
+
+    function openMathDialog(portal) {
+      pendingMathPortal = portal;
+      currentQuestion = generateQuestion(currentTopic, currentGrade);
+      mathQuestionEl.textContent = currentQuestion.text;
+      mathAnswerEl.value = '';
+      mathFeedbackEl.textContent = '';
+      mathDialog.style.display = 'flex';
+      gameRunning = false;
+      mathAnswerEl.focus();
+    }
+
+    function closeMathDialog() {
+      mathDialog.style.display = 'none';
+      gameRunning = true;
+    }
+
+    btnSubmitAnswer.addEventListener('click', () => {
+      const value = parseInt(mathAnswerEl.value, 10);
+      if (isNaN(value)) {
+        mathFeedbackEl.textContent = 'Skriv et tal som svar.';
+        return;
+      }
+      if (value === currentQuestion.answer) {
+        mathFeedbackEl.textContent = 'Korrekt! Portalen er aktiveret.';
+        if (pendingMathPortal) {
+          pendingMathPortal.solved = true;
+        }
+        setTimeout(() => {
+          closeMathDialog();
+        }, 600);
+      } else {
+        mathFeedbackEl.textContent = 'Forkert svar. Du mister et liv.';
+        loseLife();
+        setTimeout(() => {
+          closeMathDialog();
+        }, 800);
+      }
+    });
+
+    // ====== COLLISION HELPERS ======
+    function rectsOverlap(a, b) {
+      return (
+        a.x < b.x + b.w &&
+        a.x + a.w > b.x &&
+        a.y < b.y + b.h &&
+        a.y + a.h > b.y
+      );
+    }
+
+    // ====== GAME STATE ======
+    function loadLevel(index) {
+      const level = LEVELS[index];
+      currentLevelIndex = index;
+
+      platforms = level.platforms.map(p => ({ ...p }));
+      enemies = level.enemies.map(e => ({ ...e }));
+      spikes = level.spikes.map(s => ({ ...s }));
+      mathPortals = level.mathPortals.map(m => ({ ...m }));
+
+      player = createPlayer();
+      updateHUD();
+    }
+
+    function resetGameToMenu() {
+      gameRunning = false;
+      lives = MAX_LIVES;
+      startScreen.style.display = 'flex';
+      gameOverScreen.style.display = 'none';
+      levelCompleteScreen.style.display = 'none';
+    }
+
+    function loseLife() {
+      lives--;
+      if (lives <= 0) {
+        lives = 0;
+        gameRunning = false;
+        showGameOver();
+      } else {
+        // Respawn player
+        player = createPlayer();
+      }
+      updateHUD();
+    }
+
+    function showGameOver() {
+      gameOverScreen.style.display = 'flex';
+    }
+
+    function showLevelComplete() {
+      const level = LEVELS[currentLevelIndex];
+      levelCompleteTextEl.textContent = `${level.name} gennemført!`;
+      levelCompleteScreen.style.display = 'flex';
+      gameRunning = false;
+    }
+
+    btnRestart.addEventListener('click', () => {
+      resetGameToMenu();
+    });
+
+    btnBackMenu.addEventListener('click', () => {
+      resetGameToMenu();
+    });
+
+    btnNextLevel.addEventListener('click', () => {
+      levelCompleteScreen.style.display = 'none';
+      const nextIndex = currentLevelIndex + 1;
+      if (nextIndex < LEVELS.length) {
+        loadLevel(nextIndex);
+        gameRunning = true;
+      } else {
+        // No more levels – back to menu for now
+        resetGameToMenu();
+      }
+    });
+
+    // ====== HUD ======
+    function updateHUD() {
+      livesEl.innerHTML = '';
+      for (let i = 0; i < lives; i++) {
+        const span = document.createElement('span');
+        livesEl.appendChild(span);
+      }
+
+      const topicLabel = {
+        add: 'Addition',
+        sub: 'Subtraktion',
+        mul: 'Multiplikation',
+        div: 'Division'
+      }[currentTopic];
+
+      hudInfoEl.textContent = `${topicLabel} · ${currentGrade}. klasse`;
+      hudLevelEl.textContent = LEVELS[currentLevelIndex].name;
+    }
+
+    // ====== GAME LOOP ======
+    function update() {
+      if (!gameRunning) return;
+
+      // Input
+      player.vx = 0;
+      if (keys['ArrowLeft'] || keys['a']) {
+        player.vx = -MOVE_SPEED;
+      }
+      if (keys['ArrowRight'] || keys['d']) {
+        player.vx = MOVE_SPEED;
+      }
+      if ((keys[' '] || keys['ArrowUp'] || keys['w']) && player.onGround) {
+        player.vy = JUMP_FORCE;
+        player.onGround = false;
+      }
+
+      // Gravity
+      player.vy += GRAVITY;
+
+      // Horizontal movement
+      player.x += player.vx;
+
+      // Collide with platforms horizontally
+      for (const p of platforms) {
+        if (rectsOverlap(player, p)) {
+          if (player.vx > 0) {
+            player.x = p.x - player.w;
+          } else if (player.vx < 0) {
+            player.x = p.x + p.w;
+          }
+        }
+      }
+
+      // Vertical movement
+      player.y += player.vy;
+      player.onGround = false;
+
+      // Collide with platforms vertically
+      for (const p of platforms) {
+        if (rectsOverlap(player, p)) {
+          if (player.vy > 0) {
+            player.y = p.y - player.h;
+            player.vy = 0;
+            player.onGround = true;
+          } else if (player.vy < 0) {
+            player.y = p.y + p.h;
+            player.vy = 0;
+          }
+        }
+      }
+
+      // World bounds
+      if (player.y > canvas.height) {
