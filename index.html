@@ -221,13 +221,39 @@ window.onload = () => {
         {x:620,y:260,w:180,h:20}
       ],
       enemies:[
-        {x:260,y:450,w:32,h:32,dir:1,speed:1.5,range:80,origin:260}
+        {x:260,y:450,w:32,h:32},
       ],
       spikes:[
         {x:520,y:460,w:40,h:20}
       ],
       portals:[
         {x:650,y:220,w:40,h:40,solved:false}
+      ]
+    },
+    {
+      name:"Level 2",
+      platforms:[
+        {x:0,y:480,w:260,h:60},
+        {x:320,y:480,w:200,h:60},
+        {x:580,y:480,w:380,h:60},
+
+        {x:120,y:380,w:120,h:20},
+        {x:340,y:340,w:120,h:20},
+        {x:520,y:300,w:120,h:20},
+        {x:720,y:260,w:120,h:20}
+      ],
+      enemies:[
+        {x:180,y:450,w:32,h:32},
+        {x:360,y:450,w:32,h:32},
+        {x:640,y:450,w:32,h:32}
+      ],
+      spikes:[
+        {x:260,y:460,w:60,h:20},
+        {x:520,y:460,w:60,h:20},
+        {x:420,y:460,w:40,h:20}
+      ],
+      portals:[
+        {x:760,y:220,w:40,h:40,solved:false}
       ]
     }
   ];
@@ -236,12 +262,12 @@ window.onload = () => {
     return {
       x:40,
       y:420,
-      w:20,
-      h:32,
+      w:26,   // større Mario
+      h:40,   // højere Mario
       vx:0,
       vy:0,
       onGround:false,
-      facing:1 // 1 = højre, -1 = venstre
+      facing:1
     };
   }
 
@@ -328,13 +354,16 @@ window.onload = () => {
 
   btnRestart.onclick = () => {
     lives = 3;
+    currentLevel = 0;
     startScreen.style.display = "flex";
     gameOverScreen.style.display = "none";
   };
 
   btnNext.onclick = () => {
     levelCompleteScreen.style.display = "none";
-    loadLevel(0);
+    currentLevel++;
+    if(currentLevel >= LEVELS.length) currentLevel = 0;
+    loadLevel(currentLevel);
     gameRunning = true;
   };
 
@@ -356,11 +385,11 @@ window.onload = () => {
     }
 
     bullets.push({
-      x: player.facing === 1 ? player.x + player.w : player.x, // munding foran
+      x: player.facing === 1 ? player.x + player.w : player.x,
       y: player.y + player.h/2,
       r: 6,
-      speed: 10,          // HURTIGERE skud
-      dir: player.facing  // kun fremad i facing-retning
+      speed: 10,
+      dir: player.facing
     });
 
     ammo--;
@@ -446,27 +475,33 @@ window.onload = () => {
     }
 
     if(lives<=0) showGameOver();
+
+    // Level complete: alle portaler løst
+    if(portals.length && portals.every(p => p.solved)){
+      gameRunning = false;
+      levelCompleteScreen.style.display = "flex";
+    }
   }
 
   function drawPixelCharacter(px,py){
     ctx.fillStyle="#ffcc99";
-    ctx.fillRect(px+6,py,8,8);
+    ctx.fillRect(px+8,py,10,10);
 
     ctx.fillStyle="#000";
-    ctx.fillRect(px+8,py+3,2,2);
+    ctx.fillRect(px+11,py+3,2,2);
 
     ctx.fillStyle="#ff0000";
-    ctx.fillRect(px+4,py+8,12,10);
+    ctx.fillRect(px+6,py+10,14,12);
 
     ctx.fillStyle="#000";
-    ctx.fillRect(px+4,py+18,5,10);
-    ctx.fillRect(px+11,py+18,5,10);
+    ctx.fillRect(px+6,py+22,6,10);
+    ctx.fillRect(px+14,py+22,6,10);
 
     ctx.fillStyle="#444";
     if (player.facing === 1) {
-      ctx.fillRect(px+16,py+10,10,4);
+      ctx.fillRect(px+20,py+12,10,4);
     } else {
-      ctx.fillRect(px-6,py+10,10,4);
+      ctx.fillRect(px-4,py+12,10,4);
     }
   }
 
@@ -529,7 +564,8 @@ window.onload = () => {
     currentTopic = topicSelect.value;
     currentGrade = parseInt(gradeSelect.value);
     lives = 3;
-    loadLevel(0);
+    currentLevel = 0;
+    loadLevel(currentLevel);
     startScreen.style.display = "none";
     gameRunning = true;
   };
