@@ -2,7 +2,7 @@
 <html lang="da">
 <head>
 <meta charset="UTF-8">
-<title>Math Genius – Pixel Mario Gun Edition</title>
+<title>Math Genius – 3 Levels Edition</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
   body {
@@ -200,6 +200,8 @@ window.onload = () => {
   let spikes = [];
   let portals = [];
   let bullets = [];
+  let enemyBullets = [];
+  let fallingObjects = [];
 
   let currentQuestion = null;
   let pendingPortal = null;
@@ -208,9 +210,10 @@ window.onload = () => {
   let ammo = 7;
   let maxAmmo = 7;
   let canShoot = true;
-  let shootCooldown = 500; // 0.5 sek
-  let reloadTime = 1200;   // 1.2 sek
+  let shootCooldown = 500;
+  let reloadTime = 1200;
 
+  // LEVELS
   const LEVELS = [
     {
       name:"Level 1",
@@ -221,7 +224,7 @@ window.onload = () => {
         {x:620,y:260,w:180,h:20}
       ],
       enemies:[
-        {x:260,y:450,w:32,h:32},
+        {x:260,y:450,w:32,h:32,type:"normal"},
       ],
       spikes:[
         {x:520,y:460,w:40,h:20}
@@ -236,16 +239,15 @@ window.onload = () => {
         {x:0,y:480,w:260,h:60},
         {x:320,y:480,w:200,h:60},
         {x:580,y:480,w:380,h:60},
-
         {x:120,y:380,w:120,h:20},
         {x:340,y:340,w:120,h:20},
         {x:520,y:300,w:120,h:20},
         {x:720,y:260,w:120,h:20}
       ],
       enemies:[
-        {x:180,y:450,w:32,h:32},
-        {x:360,y:450,w:32,h:32},
-        {x:640,y:450,w:32,h:32}
+        {x:180,y:450,w:32,h:32,type:"normal"},
+        {x:360,y:450,w:32,h:32,type:"normal"},
+        {x:640,y:450,w:32,h:32,type:"normal"}
       ],
       spikes:[
         {x:260,y:460,w:60,h:20},
@@ -255,6 +257,29 @@ window.onload = () => {
       portals:[
         {x:760,y:220,w:40,h:40,solved:false}
       ]
+    },
+    {
+      name:"Level 3 – Boss Zone",
+      platforms:[
+        {x:0,y:480,w:960,h:60},
+        {x:200,y:380,w:160,h:20},
+        {x:450,y:320,w:160,h:20},
+        {x:700,y:260,w:160,h:20}
+      ],
+      enemies:[
+        {x:300,y:350,w:32,h:32,type:"shooter"},
+        {x:500,y:290,w:32,h:32,type:"shooter"},
+        {x:750,y:230,w:32,h:32,type:"shooter"}
+      ],
+      spikes:[
+        {x:260,y:460,w:60,h:20},
+        {x:520,y:460,w:60,h:20},
+        {x:420,y:460,w:40,h:20}
+      ],
+      portals:[
+        {x:880,y:220,w:40,h:40,solved:false}
+      ],
+      falling:true
     }
   ];
 
@@ -262,8 +287,8 @@ window.onload = () => {
     return {
       x:40,
       y:420,
-      w:26,   // større Mario
-      h:40,   // højere Mario
+      w:26,
+      h:40,
       vx:0,
       vy:0,
       onGround:false,
@@ -333,10 +358,38 @@ window.onload = () => {
     spikes = L.spikes.map(s=>({...s}));
     portals = L.portals.map(p=>({...p}));
     bullets = [];
+    enemyBullets = [];
+    fallingObjects = [];
     ammo = maxAmmo;
     canShoot = true;
     player = createPlayer();
     updateHUD();
+
+    if(L.falling){
+      setInterval(() => {
+        fallingObjects.push({
+          x: Math.random()*900,
+          y: -20,
+          w:20,
+          h:20,
+          vy:4
+        });
+      }, 1200);
+    }
+
+    enemies.forEach(e => {
+      if(e.type === "shooter"){
+        setInterval(() => {
+          enemyBullets.push({
+            x: e.x,
+            y: e.y,
+            r:6,
+            speed:4,
+            dir: player.x > e.x ? 1 : -1
+          });
+        }, 1500);
+      }
+    });
   }
 
   function updateHUD(){
@@ -462,6 +515,29 @@ window.onload = () => {
     enemies = enemies.filter(e => !e.dead);
     bullets = bullets.filter(b => !b.dead);
 
+    for(const eb of enemyBullets){
+      eb.x += eb.speed * eb.dir;
+      if(overlap(
+        {x:eb.x-eb.r,y:eb.y-eb.r,w:eb.r*2,h:eb.r*2},
+        player
+      )){
+        lives--;
+        eb.dead = true;
+      }
+    }
+
+    enemyBullets = enemyBullets.filter(b => !b.dead);
+
+    for(const obj of fallingObjects){
+      obj.y += obj.vy;
+      if(overlap(player,obj)){
+        lives--;
+        obj.dead = true;
+      }
+    }
+
+    fallingObjects = fallingObjects.filter(o => !o.dead && o.y < 600);
+
     for(const e of enemies){
       if(overlap(player,e)) lives--;
     }
@@ -476,7 +552,6 @@ window.onload = () => {
 
     if(lives<=0) showGameOver();
 
-    // Level complete: alle portaler løst
     if(portals.length && portals.every(p => p.solved)){
       gameRunning = false;
       levelCompleteScreen.style.display = "flex";
@@ -488,93 +563,4 @@ window.onload = () => {
     ctx.fillRect(px+8,py,10,10);
 
     ctx.fillStyle="#000";
-    ctx.fillRect(px+11,py+3,2,2);
-
-    ctx.fillStyle="#ff0000";
-    ctx.fillRect(px+6,py+10,14,12);
-
-    ctx.fillStyle="#000";
-    ctx.fillRect(px+6,py+22,6,10);
-    ctx.fillRect(px+14,py+22,6,10);
-
-    ctx.fillStyle="#444";
-    if (player.facing === 1) {
-      ctx.fillRect(px+20,py+12,10,4);
-    } else {
-      ctx.fillRect(px-4,py+12,10,4);
-    }
-  }
-
-  function draw(){
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-
-    ctx.fillStyle="#4caf50";
-    ctx.beginPath();
-    ctx.arc(200,480,120,Math.PI,0);
-    ctx.arc(500,480,160,Math.PI,0);
-    ctx.arc(800,480,140,Math.PI,0);
-    ctx.fill();
-
-    for(const p of platforms){
-      ctx.fillStyle="#8b5a2b";
-      ctx.fillRect(p.x,p.y,p.w,p.h);
-      ctx.fillStyle="#3f8f3f";
-      ctx.fillRect(p.x,p.y-6,p.w,8);
-    }
-
-    for(const s of spikes){
-      ctx.fillStyle="#ccc";
-      for(let i=0;i<s.w;i+=10){
-        ctx.beginPath();
-        ctx.moveTo(s.x+i, s.y+s.h);
-        ctx.lineTo(s.x+i+5, s.y);
-        ctx.lineTo(s.x+i+10, s.y+s.h);
-        ctx.fill();
-      }
-    }
-
-    for(const e of enemies){
-      ctx.fillStyle="#e74c3c";
-      ctx.fillRect(e.x,e.y,e.w,e.h);
-    }
-
-    for(const m of portals){
-      ctx.strokeStyle = m.solved ? "#4cd964" : "#4ec0ff";
-      ctx.lineWidth = 3;
-      ctx.strokeRect(m.x,m.y,m.w,m.h);
-    }
-
-    for(const b of bullets){
-      ctx.fillStyle="yellow";
-      ctx.beginPath();
-      ctx.arc(b.x,b.y,b.r,0,Math.PI*2);
-      ctx.fill();
-    }
-
-    drawPixelCharacter(player.x,player.y);
-  }
-
-  function loop(){
-    update();
-    draw();
-    requestAnimationFrame(loop);
-  }
-
-  btnStart.onclick = () => {
-    currentTopic = topicSelect.value;
-    currentGrade = parseInt(gradeSelect.value);
-    lives = 3;
-    currentLevel = 0;
-    loadLevel(currentLevel);
-    startScreen.style.display = "none";
-    gameRunning = true;
-  };
-
-  loadLevel(0);
-  loop();
-
-};
-</script>
-
-</body>
-</html>
+    ctx.fillRect(px+11,py+3,2,
