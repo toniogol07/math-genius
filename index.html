@@ -2,7 +2,7 @@
 <html lang="da">
 <head>
 <meta charset="UTF-8">
-<title>Math Genius – 3 Levels Edition</title>
+<title>Math Genius – 4 Levels Edition</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
   body {
@@ -282,6 +282,29 @@ window.onload = () => {
         {x:880,y:220,w:40,h:40,solved:false}
       ],
       falling:true
+    },
+    {
+      name:"Level 4 – Moving Shooters",
+      platforms:[
+        {x:0,y:480,w:960,h:60},
+        {x:150,y:380,w:200,h:20},
+        {x:400,y:320,w:200,h:20},
+        {x:680,y:260,w:200,h:20}
+      ],
+      enemies:[
+        {x:160,y:348,w:32,h:32,type:"movingShooter",dir:1,range:140,origin:160,lastShot:0},
+        {x:410,y:288,w:32,h:32,type:"movingShooter",dir:-1,range:140,origin:570,lastShot:0},
+        {x:690,y:228,w:32,h:32,type:"movingShooter",dir:1,range:160,origin:690,lastShot:0}
+      ],
+      spikes:[
+        {x:260,y:460,w:60,h:20},
+        {x:520,y:460,w:60,h:20},
+        {x:420,y:460,w:40,h:20}
+      ],
+      portals:[
+        {x:880,y:220,w:40,h:40,solved:false}
+      ],
+      falling:false
     }
   ];
 
@@ -433,7 +456,7 @@ window.onload = () => {
 
   function updateShooterEnemies(now){
     for(const e of enemies){
-      if(e.type === "shooter"){
+      if(e.type === "shooter" || e.type === "movingShooter"){
         if(!e.lastShot) e.lastShot = 0;
         if(now - e.lastShot > 1500){
           const dir = player.x > e.x ? 1 : -1;
@@ -445,6 +468,17 @@ window.onload = () => {
             dir
           });
           e.lastShot = now;
+        }
+      }
+    }
+  }
+
+  function updateMovingEnemies(){
+    for(const e of enemies){
+      if(e.type === "movingShooter"){
+        e.x += e.dir * 2;
+        if(e.x < e.origin || e.x > e.origin + e.range){
+          e.dir *= -1;
         }
       }
     }
@@ -526,6 +560,7 @@ window.onload = () => {
     enemies = enemies.filter(e => !e.dead);
     bullets = bullets.filter(b => !b.dead);
 
+    updateMovingEnemies();
     updateShooterEnemies(now);
 
     for(const eb of enemyBullets){
@@ -622,7 +657,9 @@ window.onload = () => {
     }
 
     for(const e of enemies){
-      ctx.fillStyle = e.type==="shooter" ? "#ff8800" : "#e74c3c";
+      if(e.type==="movingShooter") ctx.fillStyle="#ff00ff";
+      else if(e.type==="shooter") ctx.fillStyle="#ff8800";
+      else ctx.fillStyle="#e74c3c";
       ctx.fillRect(e.x,e.y,e.w,e.h);
     }
 
