@@ -204,7 +204,7 @@ window.onload = () => {
   let currentQuestion = null;
   let pendingPortal = null;
 
-  /* === AMMO SYSTEM === */
+  // Ammo system
   let ammo = 7;
   let maxAmmo = 7;
   let canShoot = true;
@@ -241,7 +241,7 @@ window.onload = () => {
       vx:0,
       vy:0,
       onGround:false,
-      facing:1
+      facing:1 // 1 = højre, -1 = venstre
     };
   }
 
@@ -338,7 +338,6 @@ window.onload = () => {
     gameRunning = true;
   };
 
-  /* === RELOAD === */
   function reloadWeapon(){
     canShoot = false;
     ammoEl.textContent = "Reloading...";
@@ -349,7 +348,6 @@ window.onload = () => {
     }, reloadTime);
   }
 
-  /* === SHOOT === */
   function shootBullet(){
     if (!canShoot) return;
     if (ammo <= 0) {
@@ -358,11 +356,11 @@ window.onload = () => {
     }
 
     bullets.push({
-      x: player.x + player.w,
+      x: player.facing === 1 ? player.x + player.w : player.x, // munding foran
       y: player.y + player.h/2,
       r: 6,
-      speed: 6,
-      dir: player.facing
+      speed: 10,          // HURTIGERE skud
+      dir: player.facing  // kun fremad i facing-retning
     });
 
     ammo--;
@@ -465,7 +463,11 @@ window.onload = () => {
     ctx.fillRect(px+11,py+18,5,10);
 
     ctx.fillStyle="#444";
-    ctx.fillRect(px+16,py+10,10,4);
+    if (player.facing === 1) {
+      ctx.fillRect(px+16,py+10,10,4);
+    } else {
+      ctx.fillRect(px-6,py+10,10,4);
+    }
   }
 
   function draw(){
