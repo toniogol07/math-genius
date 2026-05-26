@@ -252,140 +252,8 @@ window.onload = () => {
   let worldWidth = 4000;
   let cameraX = 0;
 
-  // Level unlocks: true = unlocked
   let unlockedLevels = [true, false, false, false];
-
-  const LEVELS = [
-    // LEVEL 1
-    {
-      name:"Level 1 – Intro",
-      platforms:[
-  {x:0,y:480,w:600,h:60},
-  {x:650,y:420,w:200,h:20},
-  {x:900,y:360,w:200,h:20},
-  {x:1150,y:320,w:200,h:20},
-  {x:1400,y:280,w:200,h:20},
-  {x:1650,y:320,w:200,h:20},
-  {x:1900,y:360,w:200,h:20},
-  {x:2150,y:380,w:200,h:20},
-  {x:2400,y:360,w:200,h:20},
-  {x:2650,y:340,w:200,h:20}
-]
-
-      ],
-      enemies:[
-        {x:750,y:388,w:32,h:32,type:"normal"},
-        {x:1050,y:328,w:32,h:32,type:"normal"}
-      ],
-      spikes:[
-        {x:600,y:460,w:80,h:20},
-        {x:1900,y:460,w:80,h:20}
-      ],
-      portals:[
-        {x:3720,y:260,w:40,h:40,solved:false}
-      ],
-      falling:false
-    },
-    // LEVEL 2
-    {
-      name:"Level 2 – Farligere",
-platforms:[
-  {x:0,y:480,w:400,h:60},
-  {x:450,y:420,w:200,h:20},
-  {x:700,y:360,w:200,h:20},
-  {x:950,y:320,w:200,h:20},
-  {x:1200,y:280,w:200,h:20},
-  {x:1450,y:320,w:200,h:20},
-  {x:1700,y:360,w:200,h:20},
-  {x:1950,y:380,w:200,h:20},
-  {x:2200,y:360,w:200,h:20},
-  {x:2450,y:340,w:200,h:20}
-]
-      enemies:[
-        {x:520,y:388,w:32,h:32,type:"normal"},
-        {x:820,y:328,w:32,h:32,type:"normal"},
-        {x:1520,y:248,w:32,h:32,type:"normal"},
-        {x:2720,y:328,w:32,h:32,type:"normal"}
-      ],
-      spikes:[
-        {x:400,y:460,w:80,h:20},
-        {x:1000,y:460,w:80,h:20},
-        {x:2100,y:460,w:80,h:20},
-        {x:3200,y:460,w:80,h:20}
-      ],
-      portals:[
-        {x:3520,y:240,w:40,h:40,solved:false}
-      ],
-      falling:false
-    },
-    // LEVEL 3
-    {
-      name:"Level 3 – Skydefjender & fald",
- platforms:[
-  {x:0,y:480,w:500,h:60},
-  {x:550,y:420,w:200,h:20},
-  {x:800,y:360,w:200,h:20},
-  {x:1050,y:320,w:200,h:20},
-  {x:1300,y:280,w:200,h:20},
-  {x:1550,y:320,w:200,h:20},
-  {x:1800,y:360,w:200,h:20},
-  {x:2050,y:320,w:200,h:20},
-  {x:2300,y:300,w:200,h:20},
-  {x:2550,y:280,w:200,h:20}
-]
-
-      enemies:[
-        {x:620,y:388,w:32,h:32,type:"shooter",lastShot:0},
-        {x:920,y:328,w:32,h:32,type:"shooter",lastShot:0},
-        {x:2020,y:288,w:32,h:32,type:"shooter",lastShot:0},
-        {x:2720,y:288,w:32,h:32,type:"shooter",lastShot:0}
-      ],
-      spikes:[
-        {x:500,y:460,w:80,h:20},
-        {x:1100,y:460,w:80,h:20},
-        {x:1900,y:460,w:80,h:20},
-        {x:2600,y:460,w:80,h:20}
-      ],
-      portals:[
-        {x:3470,y:220,w:40,h:40,solved:false}
-      ],
-      falling:true
-    },
-    // LEVEL 4
-    {
-      name:"Level 4 – Moving Shooters",
-     platforms:[
-  {x:0,y:480,w:500,h:60},
-  {x:550,y:420,w:260,h:20},
-  {x:850,y:360,w:260,h:20},
-  {x:1150,y:320,w:260,h:20},
-  {x:1450,y:280,w:260,h:20},
-  {x:1750,y:320,w:260,h:20},
-  {x:2050,y:360,w:260,h:20},
-  {x:2350,y:320,w:260,h:20},
-  {x:2650,y:280,w:260,h:20}
-]
-
-      enemies:[
-        {x:610,y:388,w:32,h:32,type:"movingShooter",dir:1,range:180,origin:610,lastShot:0},
-        {x:1010,y:328,w:32,h:32,type:"movingShooter",dir:-1,range:180,origin:1240,lastShot:0},
-        {x:1910,y:248,w:32,h:32,type:"movingShooter",dir:1,range:200,origin:1910,lastShot:0},
-        {x:2810,y:328,w:32,h:32,type:"movingShooter",dir:-1,range:200,origin:3050,lastShot:0}
-      ],
-      spikes:[
-        {x:500,y:460,w:80,h:20},
-        {x:900,y:460,w:80,h:20},
-        {x:1500,y:460,w:80,h:20},
-        {x:2200,y:460,w:80,h:20},
-        {x:3000,y:460,w:80,h:20}
-      ],
-      portals:[
-        {x:3720,y:240,w:40,h:40,solved:false}
-      ],
-      falling:false
-    }
-  ];
-
+  // === PLAYER CREATION ===
   function createPlayer() {
     return {
       x:40,
@@ -399,9 +267,11 @@ platforms:[
     };
   }
 
+  // === INPUT ===
   window.addEventListener("keydown", e => keys[e.key] = true);
   window.addEventListener("keyup", e => keys[e.key] = false);
 
+  // === MATH QUESTIONS ===
   function generateQuestion(topic, grade) {
     const max = grade * 10;
     let a = Math.floor(Math.random()*max);
@@ -453,6 +323,7 @@ platforms:[
     }, 400);
   };
 
+  // === COLLISION ===
   function overlap(a,b){
     return a.x < b.x+b.w &&
            a.x+a.w > b.x &&
@@ -460,6 +331,7 @@ platforms:[
            a.y+a.h > b.y;
   }
 
+  // === LOAD LEVEL ===
   function loadLevel(i){
     const L = LEVELS[i];
     currentLevel = i;
@@ -478,6 +350,7 @@ platforms:[
     updateHUD();
   }
 
+  // === HUD ===
   function updateHUD(){
     livesEl.innerHTML = "";
     for(let i=0;i<lives;i++) livesEl.innerHTML += "<span></span>";
@@ -486,6 +359,7 @@ platforms:[
     ammoEl.textContent = `Ammo: ${ammo}/${maxAmmo}`;
   }
 
+  // === GAME OVER ===
   function showGameOver(){
     gameRunning = false;
     gameOverScreen.style.display = "flex";
@@ -501,6 +375,7 @@ platforms:[
     startScreen.style.display = "flex";
   };
 
+  // === SHOOTING ===
   function reloadWeapon(){
     canShoot = false;
     ammoEl.textContent = "Reloading...";
@@ -535,6 +410,7 @@ platforms:[
     if (ammo === 0) reloadWeapon();
   }
 
+  // === ENEMY SHOOTING ===
   function updateShooterEnemies(now){
     for(const e of enemies){
       if(e.type === "shooter" || e.type === "movingShooter"){
@@ -554,6 +430,7 @@ platforms:[
     }
   }
 
+  // === MOVING SHOOTERS ===
   function updateMovingEnemies(){
     for(const e of enemies){
       if(e.type === "movingShooter"){
@@ -565,6 +442,7 @@ platforms:[
     }
   }
 
+  // === FALLING OBJECTS (LEVEL 3) ===
   function updateFallingObjects(now){
     const L = LEVELS[currentLevel];
     if(!L.falling) return;
@@ -580,6 +458,7 @@ platforms:[
     }
   }
 
+  // === CAMERA ===
   function updateCamera(){
     const center = canvas.width/2;
     cameraX = player.x - center + player.w/2;
@@ -587,11 +466,170 @@ platforms:[
     if(cameraX > worldWidth - canvas.width) cameraX = worldWidth - canvas.width;
   }
 
+  // === LEVEL SELECT UNLOCK ===
+  function refreshLevelButtons(){
+    levelButtons.forEach((btn,idx)=>{
+      if(unlockedLevels[idx]){
+        btn.classList.remove("locked");
+        btn.disabled = false;
+      } else {
+        btn.classList.add("locked");
+        btn.disabled = true;
+      }
+    });
+  }
+
+  levelButtons.forEach(btn=>{
+    btn.onclick = () => {
+      const lvl = parseInt(btn.getAttribute("data-level"));
+      if(!unlockedLevels[lvl]) return;
+      currentTopic = topicSelect.value;
+      currentGrade = parseInt(gradeSelect.value);
+      lives = 3;
+      loadLevel(lvl);
+      startScreen.style.display = "none";
+      gameRunning = true;
+    };
+  });
+
+  refreshLevelButtons();
+  // === LEVEL DATA (platforme lidt tættere) ===
+  const LEVELS = [
+    // LEVEL 1
+    {
+      name:"Level 1 – Intro",
+      platforms:[
+        {x:0,y:480,w:600,h:60},
+        {x:650,y:420,w:200,h:20},
+        {x:900,y:360,w:200,h:20},
+        {x:1150,y:320,w:200,h:20},
+        {x:1400,y:280,w:200,h:20},
+        {x:1650,y:320,w:200,h:20},
+        {x:1900,y:360,w:200,h:20},
+        {x:2150,y:380,w:200,h:20},
+        {x:2400,y:360,w:200,h:20},
+        {x:2650,y:340,w:200,h:20}
+      ],
+      enemies:[
+        {x:750,y:388,w:32,h:32,type:"normal"},
+        {x:1050,y:328,w:32,h:32,type:"normal"}
+      ],
+      spikes:[
+        {x:600,y:460,w:80,h:20},
+        {x:1900,y:460,w:80,h:20}
+      ],
+      portals:[
+        {x:2720,y:300,w:40,h:40,solved:false}
+      ],
+      falling:false
+    },
+
+    // LEVEL 2
+    {
+      name:"Level 2 – Farligere",
+      platforms:[
+        {x:0,y:480,w:400,h:60},
+        {x:450,y:420,w:200,h:20},
+        {x:700,y:360,w:200,h:20},
+        {x:950,y:320,w:200,h:20},
+        {x:1200,y:280,w:200,h:20},
+        {x:1450,y:320,w:200,h:20},
+        {x:1700,y:360,w:200,h:20},
+        {x:1950,y:380,w:200,h:20},
+        {x:2200,y:360,w:200,h:20},
+        {x:2450,y:340,w:200,h:20}
+      ],
+      enemies:[
+        {x:520,y:388,w:32,h:32,type:"normal"},
+        {x:820,y:328,w:32,h:32,type:"normal"},
+        {x:1520,y:248,w:32,h:32,type:"normal"},
+        {x:2220,y:328,w:32,h:32,type:"normal"}
+      ],
+      spikes:[
+        {x:400,y:460,w:80,h:20},
+        {x:1000,y:460,w:80,h:20},
+        {x:1800,y:460,w:80,h:20},
+        {x:2600,y:460,w:80,h:20}
+      ],
+      portals:[
+        {x:2500,y:300,w:40,h:40,solved:false}
+      ],
+      falling:false
+    },
+
+    // LEVEL 3
+    {
+      name:"Level 3 – Skydefjender & fald",
+      platforms:[
+        {x:0,y:480,w:500,h:60},
+        {x:550,y:420,w:200,h:20},
+        {x:800,y:360,w:200,h:20},
+        {x:1050,y:320,w:200,h:20},
+        {x:1300,y:280,w:200,h:20},
+        {x:1550,y:320,w:200,h:20},
+        {x:1800,y:360,w:200,h:20},
+        {x:2050,y:320,w:200,h:20},
+        {x:2300,y:300,w:200,h:20},
+        {x:2550,y:280,w:200,h:20}
+      ],
+      enemies:[
+        {x:620,y:388,w:32,h:32,type:"shooter",lastShot:0},
+        {x:920,y:328,w:32,h:32,type:"shooter",lastShot:0},
+        {x:2020,y:288,w:32,h:32,type:"shooter",lastShot:0},
+        {x:2320,y:268,w:32,h:32,type:"shooter",lastShot:0}
+      ],
+      spikes:[
+        {x:500,y:460,w:80,h:20},
+        {x:1100,y:460,w:80,h:20},
+        {x:1700,y:460,w:80,h:20},
+        {x:2400,y:460,w:80,h:20}
+      ],
+      portals:[
+        {x:2600,y:240,w:40,h:40,solved:false}
+      ],
+      falling:true
+    },
+
+    // LEVEL 4
+    {
+      name:"Level 4 – Moving Shooters",
+      platforms:[
+        {x:0,y:480,w:500,h:60},
+        {x:550,y:420,w:260,h:20},
+        {x:850,y:360,w:260,h:20},
+        {x:1150,y:320,w:260,h:20},
+        {x:1450,y:280,w:260,h:20},
+        {x:1750,y:320,w:260,h:20},
+        {x:2050,y:360,w:260,h:20},
+        {x:2350,y:320,w:260,h:20},
+        {x:2650,y:280,w:260,h:20}
+      ],
+      enemies:[
+        {x:610,y:388,w:32,h:32,type:"movingShooter",dir:1,range:180,origin:610,lastShot:0},
+        {x:1010,y:328,w:32,h:32,type:"movingShooter",dir:-1,range:180,origin:1240,lastShot:0},
+        {x:1910,y:248,w:32,h:32,type:"movingShooter",dir:1,range:200,origin:1910,lastShot:0},
+        {x:2410,y:288,w:32,h:32,type:"movingShooter",dir:-1,range:200,origin:2650,lastShot:0}
+      ],
+      spikes:[
+        {x:500,y:460,w:80,h:20},
+        {x:900,y:460,w:80,h:20},
+        {x:1500,y:460,w:80,h:20},
+        {x:2000,y:460,w:80,h:20},
+        {x:2600,y:460,w:80,h:20}
+      ],
+      portals:[
+        {x:2700,y:240,w:40,h:40,solved:false}
+      ],
+      falling:false
+    }
+  ];
+  // === UPDATE LOOP ===
   function update(){
     if(!gameRunning) return;
 
     const now = performance.now();
 
+    // --- PLAYER MOVEMENT ---
     player.vx = 0;
 
     if(keys["ArrowLeft"]){
@@ -613,18 +651,22 @@ platforms:[
       keys[" "] = false;
     }
 
+    // Gravity
     player.vy += 0.6;
     player.x += player.vx;
     player.y += player.vy;
 
+    // Keep inside world
     if(player.x < 0) player.x = 0;
     if(player.x + player.w > worldWidth) player.x = worldWidth - player.w;
 
+    // Reset ground state
     player.onGround = false;
 
+    // --- PLATFORM COLLISION ---
     for(const p of platforms){
       if(overlap(player,p)){
-        if(player.vy>0){
+        if(player.vy > 0){
           player.y = p.y - player.h;
           player.vy = 0;
           player.onGround = true;
@@ -632,10 +674,10 @@ platforms:[
       }
     }
 
-    // Falder ned og dør
+    // --- FALLING DEATH ---
     if(player.y > 600){
       lives--;
-      if(lives<=0){
+      if(lives <= 0){
         updateHUD();
         showGameOver();
       } else {
@@ -644,17 +686,16 @@ platforms:[
       updateHUD();
     }
 
+    // --- PLAYER BULLETS ---
     for(const b of bullets){
       b.x += b.speed * b.dir;
     }
     bullets = bullets.filter(b => b.x < worldWidth+100 && b.x > -100);
 
+    // Bullet hits enemy
     for(const b of bullets){
       for(const e of enemies){
-        if(overlap(
-          {x:b.x-b.r,y:b.y-b.r,w:b.r*2,h:b.r*2},
-          e
-        )){
+        if(overlap({x:b.x-b.r,y:b.y-b.r,w:b.r*2,h:b.r*2}, e)){
           e.dead = true;
           b.dead = true;
         }
@@ -663,21 +704,21 @@ platforms:[
     enemies = enemies.filter(e => !e.dead);
     bullets = bullets.filter(b => !b.dead);
 
+    // --- ENEMY MOVEMENT & SHOOTING ---
     updateMovingEnemies();
     updateShooterEnemies(now);
 
+    // --- ENEMY BULLETS ---
     for(const eb of enemyBullets){
       eb.x += eb.speed * eb.dir;
-      if(overlap(
-        {x:eb.x-eb.r,y:eb.y-eb.r,w:eb.r*2,h:eb.r*2},
-        player
-      )){
+      if(overlap({x:eb.x-eb.r,y:eb.y-eb.r,w:eb.r*2,h:eb.r*2}, player)){
         lives--;
         eb.dead = true;
       }
     }
     enemyBullets = enemyBullets.filter(b => !b.dead && b.x>-50 && b.x<worldWidth+50);
 
+    // --- FALLING OBJECTS (LEVEL 3) ---
     updateFallingObjects(now);
 
     for(const obj of fallingObjects){
@@ -689,33 +730,40 @@ platforms:[
     }
     fallingObjects = fallingObjects.filter(o => !o.dead && o.y<600);
 
+    // --- TOUCHING ENEMIES ---
     for(const e of enemies){
       if(overlap(player,e)) lives--;
     }
 
+    // --- TOUCHING SPIKES ---
     for(const s of spikes){
       if(overlap(player,s)) lives--;
     }
 
+    // --- PORTALS ---
     for(const m of portals){
       if(!m.solved && overlap(player,m)) openMathDialog(m);
     }
 
-    if(lives<=0) showGameOver();
+    if(lives <= 0) showGameOver();
 
+    // --- LEVEL COMPLETE ---
     if(portals.length && portals.every(p => p.solved)){
       gameRunning = false;
       levelCompleteScreen.style.display = "flex";
-      // unlock next level
+
+      // Unlock next level
       if(currentLevel < unlockedLevels.length-1){
         unlockedLevels[currentLevel+1] = true;
         refreshLevelButtons();
       }
     }
 
+    // --- CAMERA ---
     updateCamera();
   }
 
+  // === DRAW PLAYER ===
   function drawPixelCharacter(px,py){
     const sx = px - cameraX;
     const sy = py;
@@ -741,12 +789,12 @@ platforms:[
     }
   }
 
+  // === PARALLAX BACKGROUND ===
   function drawBackground(){
-    // Himmel
     ctx.fillStyle="#6ec6ff";
     ctx.fillRect(0,0,canvas.width,canvas.height);
 
-    // Fjerne bakker (parallax langsom)
+    // Hills (slow parallax)
     ctx.fillStyle="#5aa85a";
     const hillOffset = -cameraX * 0.2;
     for(let i=-1;i<6;i++){
@@ -756,7 +804,7 @@ platforms:[
       ctx.fill();
     }
 
-    // Skyer (parallax endnu langsommere)
+    // Clouds (very slow parallax)
     ctx.fillStyle="rgba(255,255,255,0.9)";
     const cloudOffset = -cameraX * 0.1;
     for(let i=-1;i<8;i++){
@@ -770,6 +818,7 @@ platforms:[
     }
   }
 
+  // === DRAW LOOP ===
   function draw(){
     ctx.clearRect(0,0,canvas.width,canvas.height);
 
@@ -782,11 +831,6 @@ platforms:[
       ctx.fillRect(sx,p.y,p.w,p.h);
       ctx.fillStyle="#3f8f3f";
       ctx.fillRect(sx,p.y-6,p.w,8);
-
-      // små sten
-      ctx.fillStyle="#555";
-      ctx.fillRect(sx+10,p.y+p.h-8,6,6);
-      ctx.fillRect(sx+p.w-20,p.y+p.h-10,8,8);
     }
 
     // Spikes
@@ -805,8 +849,10 @@ platforms:[
     // Enemies
     for(const e of enemies){
       const sx = e.x - cameraX;
-      ctx.fillStyle = e.type==="movingShooter" ? "#ff00ff" :
-                      e.type==="shooter" ? "#ff8800" : "#e74c3c";
+      ctx.fillStyle =
+        e.type==="movingShooter" ? "#ff00ff" :
+        e.type==="shooter" ? "#ff8800" :
+        "#e74c3c";
       ctx.fillRect(sx,e.y,e.w,e.h);
     }
 
@@ -846,41 +892,18 @@ platforms:[
     drawPixelCharacter(player.x,player.y);
   }
 
+  // === GAME LOOP ===
   function loop(){
     update();
     draw();
     requestAnimationFrame(loop);
   }
 
-  function refreshLevelButtons(){
-    levelButtons.forEach((btn,idx)=>{
-      if(unlockedLevels[idx]){
-        btn.classList.remove("locked");
-        btn.disabled = false;
-      } else {
-        btn.classList.add("locked");
-        btn.disabled = true;
-      }
-    });
-  }
-
-  levelButtons.forEach(btn=>{
-    btn.onclick = () => {
-      const lvl = parseInt(btn.getAttribute("data-level"));
-      if(!unlockedLevels[lvl]) return;
-      currentTopic = topicSelect.value;
-      currentGrade = parseInt(gradeSelect.value);
-      lives = 3;
-      loadLevel(lvl);
-      startScreen.style.display = "none";
-      gameRunning = true;
-    };
-  });
-
-  refreshLevelButtons();
+  // === START GAME ===
   loadLevel(0);
   loop();
-};
+
+}; // END window.onload
 </script>
 
 </body>
