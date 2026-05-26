@@ -2,7 +2,7 @@
 <html lang="da">
 <head>
 <meta charset="UTF-8">
-<title>Math Genius – Mario Edition</title>
+<title>Math Genius – Pixel Mario Gun Edition</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
   body {
@@ -31,7 +31,6 @@
     background:linear-gradient(#6ec6ff 60%, #5bb85b 60%);
   }
 
-  /* HUD */
   #hud {
     position:absolute;
     top:10px;
@@ -55,7 +54,6 @@
     box-shadow:0 0 6px rgba(0,0,0,0.6);
   }
 
-  /* Screens */
   .screen {
     position:absolute;
     inset:0;
@@ -84,8 +82,6 @@
     cursor:pointer;
     margin-top:10px;
   }
-
-  button:hover { background:#ffe066; }
 </style>
 </head>
 <body>
@@ -99,7 +95,6 @@
     <div id="level-name"></div>
   </div>
 
-  <!-- Start screen -->
   <div id="start-screen" class="screen">
     <div class="panel">
       <h1>Math Genius</h1>
@@ -126,7 +121,6 @@
     </div>
   </div>
 
-  <!-- Math dialog -->
   <div id="math-dialog" class="screen" style="display:none;">
     <div class="panel">
       <h2>Matematik</h2>
@@ -137,7 +131,6 @@
     </div>
   </div>
 
-  <!-- Game over -->
   <div id="game-over" class="screen" style="display:none;">
     <div class="panel">
       <h1>Game Over</h1>
@@ -145,7 +138,6 @@
     </div>
   </div>
 
-  <!-- Level complete -->
   <div id="level-complete" class="screen" style="display:none;">
     <div class="panel">
       <h1>Level gennemført!</h1>
@@ -158,11 +150,9 @@
 <script>
 window.onload = () => {
 
-  /* ====== CANVAS ====== */
   const canvas = document.getElementById("game");
   const ctx = canvas.getContext("2d");
 
-  /* ====== DOM ====== */
   const startScreen = document.getElementById("start-screen");
   const mathDialog = document.getElementById("math-dialog");
   const gameOverScreen = document.getElementById("game-over");
@@ -184,7 +174,6 @@ window.onload = () => {
   const answerEl = document.getElementById("answer");
   const feedbackEl = document.getElementById("feedback");
 
-  /* ====== GAME STATE ====== */
   let keys = {};
   let gameRunning = false;
   let currentTopic = "add";
@@ -197,10 +186,11 @@ window.onload = () => {
   let enemies = [];
   let spikes = [];
   let portals = [];
+  let bullets = [];
+
   let currentQuestion = null;
   let pendingPortal = null;
 
-  /* ====== LEVELS ====== */
   const LEVELS = [
     {
       name:"Level 1",
@@ -222,24 +212,22 @@ window.onload = () => {
     }
   ];
 
-  /* ====== PLAYER ====== */
   function createPlayer() {
     return {
       x:40,
       y:420,
-      w:32,
-      h:40,
+      w:20,
+      h:32,
       vx:0,
       vy:0,
-      onGround:false
+      onGround:false,
+      facing:1
     };
   }
 
-  /* ====== INPUT ====== */
   window.addEventListener("keydown", e => keys[e.key] = true);
   window.addEventListener("keyup", e => keys[e.key] = false);
 
-  /* ====== MATH ====== */
   function generateQuestion(topic, grade) {
     const max = grade * 10;
     let a = Math.floor(Math.random()*max);
@@ -284,7 +272,6 @@ window.onload = () => {
     updateHUD();
   };
 
-  /* ====== COLLISION ====== */
   function overlap(a,b){
     return a.x < b.x+b.w &&
            a.x+a.w > b.x &&
@@ -292,7 +279,6 @@ window.onload = () => {
            a.y+a.h > b.y;
   }
 
-  /* ====== LEVEL LOAD ====== */
   function loadLevel(i){
     const L = LEVELS[i];
     currentLevel = i;
@@ -300,11 +286,11 @@ window.onload = () => {
     enemies = L.enemies.map(e=>({...e}));
     spikes = L.spikes.map(s=>({...s}));
     portals = L.portals.map(p=>({...p}));
+    bullets = [];
     player = createPlayer();
     updateHUD();
   }
 
-  /* ====== HUD ====== */
   function updateHUD(){
     livesEl.innerHTML = "";
     for(let i=0;i<lives;i++) livesEl.innerHTML += "<span></span>";
@@ -312,7 +298,6 @@ window.onload = () => {
     levelNameEl.textContent = LEVELS[currentLevel].name;
   }
 
-  /* ====== GAME OVER ====== */
   function showGameOver(){
     gameRunning = false;
     gameOverScreen.style.display = "flex";
@@ -324,26 +309,44 @@ window.onload = () => {
     gameOverScreen.style.display = "none";
   };
 
-  /* ====== LEVEL COMPLETE ====== */
   btnNext.onclick = () => {
     levelCompleteScreen.style.display = "none";
     loadLevel(0);
     gameRunning = true;
   };
 
-  /* ====== UPDATE ====== */
+  function shootBullet(){
+    bullets.push({
+      x: player.x + player.w,
+      y: player.y + player.h/2,
+      r: 6,
+      speed: 6,
+      dir: player.facing
+    });
+  }
+
   function update(){
     if(!gameRunning) return;
 
     player.vx = 0;
 
-    if(keys["ArrowLeft"]) player.vx = -4;
-    if(keys["ArrowRight"]) player.vx = 4;
+    if(keys["ArrowLeft"]){
+      player.vx = -4;
+      player.facing = -1;
+    }
+    if(keys["ArrowRight"]){
+      player.vx = 4;
+      player.facing = 1;
+    }
 
-    /* HOP PÅ PIL OP */
     if(keys["ArrowUp"] && player.onGround){
       player.vy = -12;
       player.onGround = false;
+    }
+
+    if(keys[" "]){
+      shootBullet();
+      keys[" "] = false;
     }
 
     player.vy += 0.6;
@@ -362,6 +365,27 @@ window.onload = () => {
       }
     }
 
+    for(const b of bullets){
+      b.x += b.speed * b.dir;
+    }
+
+    bullets = bullets.filter(b => b.x < 1000 && b.x > -100);
+
+    for(const b of bullets){
+      for(const e of enemies){
+        if(overlap(
+          {x:b.x-b.r,y:b.y-b.r,w:b.r*2,h:b.r*2},
+          e
+        )){
+          e.dead = true;
+          b.dead = true;
+        }
+      }
+    }
+
+    enemies = enemies.filter(e => !e.dead);
+    bullets = bullets.filter(b => !b.dead);
+
     for(const e of enemies){
       if(overlap(player,e)) lives--;
     }
@@ -377,11 +401,27 @@ window.onload = () => {
     if(lives<=0) showGameOver();
   }
 
-  /* ====== DRAW ====== */
+  function drawPixelCharacter(px,py){
+    ctx.fillStyle="#ffcc99"; // hud
+    ctx.fillRect(px+6,py,8,8); // hoved
+
+    ctx.fillStyle="#000";
+    ctx.fillRect(px+8,py+3,2,2); // øje
+
+    ctx.fillStyle="#ff0000"; // krop
+    ctx.fillRect(px+4,py+8,12,10);
+
+    ctx.fillStyle="#000"; // ben
+    ctx.fillRect(px+4,py+18,5,10);
+    ctx.fillRect(px+11,py+18,5,10);
+
+    ctx.fillStyle="#444"; // pistol
+    ctx.fillRect(px+16,py+10,10,4);
+  }
+
   function draw(){
     ctx.clearRect(0,0,canvas.width,canvas.height);
 
-    /* Mario hills */
     ctx.fillStyle="#4caf50";
     ctx.beginPath();
     ctx.arc(200,480,120,Math.PI,0);
@@ -389,7 +429,6 @@ window.onload = () => {
     ctx.arc(800,480,140,Math.PI,0);
     ctx.fill();
 
-    /* Platforms */
     for(const p of platforms){
       ctx.fillStyle="#8b5a2b";
       ctx.fillRect(p.x,p.y,p.w,p.h);
@@ -397,7 +436,6 @@ window.onload = () => {
       ctx.fillRect(p.x,p.y-6,p.w,8);
     }
 
-    /* Spikes */
     for(const s of spikes){
       ctx.fillStyle="#ccc";
       for(let i=0;i<s.w;i+=10){
@@ -409,32 +447,33 @@ window.onload = () => {
       }
     }
 
-    /* Enemies */
     for(const e of enemies){
       ctx.fillStyle="#e74c3c";
       ctx.fillRect(e.x,e.y,e.w,e.h);
     }
 
-    /* Portals */
     for(const m of portals){
       ctx.strokeStyle = m.solved ? "#4cd964" : "#4ec0ff";
       ctx.lineWidth = 3;
       ctx.strokeRect(m.x,m.y,m.w,m.h);
     }
 
-    /* Player */
-    ctx.fillStyle="#ffdd55";
-    ctx.fillRect(player.x,player.y,player.w,player.h);
+    for(const b of bullets){
+      ctx.fillStyle="yellow";
+      ctx.beginPath();
+      ctx.arc(b.x,b.y,b.r,0,Math.PI*2);
+      ctx.fill();
+    }
+
+    drawPixelCharacter(player.x,player.y);
   }
 
-  /* ====== LOOP ====== */
   function loop(){
     update();
     draw();
     requestAnimationFrame(loop);
   }
 
-  /* ====== START ====== */
   btnStart.onclick = () => {
     currentTopic = topicSelect.value;
     currentGrade = parseInt(gradeSelect.value);
