@@ -162,9 +162,11 @@
 <script>
 window.onload = () => {
 
+  /* === CANVAS === */
   const canvas = document.getElementById("game");
   const ctx = canvas.getContext("2d");
 
+  /* === DOM === */
   const startScreen = document.getElementById("start-screen");
   const mathDialog = document.getElementById("math-dialog");
   const gameOverScreen = document.getElementById("game-over");
@@ -187,6 +189,7 @@ window.onload = () => {
   const answerEl = document.getElementById("answer");
   const feedbackEl = document.getElementById("feedback");
 
+  /* === GAME STATE === */
   let keys = {};
   let gameRunning = false;
   let currentTopic = "add";
@@ -206,15 +209,16 @@ window.onload = () => {
   let currentQuestion = null;
   let pendingPortal = null;
 
-  // Ammo system
+  /* === AMMO SYSTEM === */
   let ammo = 7;
   let maxAmmo = 7;
   let canShoot = true;
   let shootCooldown = 500;
   let reloadTime = 1200;
 
-  // LEVELS
+  /* === LEVELS === */
   const LEVELS = [
+    /* === LEVEL 1 === */
     {
       name:"Level 1",
       platforms:[
@@ -233,6 +237,8 @@ window.onload = () => {
         {x:650,y:220,w:40,h:40,solved:false}
       ]
     },
+
+    /* === LEVEL 2 === */
     {
       name:"Level 2",
       platforms:[
@@ -258,6 +264,8 @@ window.onload = () => {
         {x:760,y:220,w:40,h:40,solved:false}
       ]
     },
+
+    /* === LEVEL 3 — SKYDEFJENDER + FALLING OBJECTS === */
     {
       name:"Level 3 – Boss Zone",
       platforms:[
@@ -283,6 +291,7 @@ window.onload = () => {
     }
   ];
 
+  /* === PLAYER === */
   function createPlayer() {
     return {
       x:40,
@@ -296,9 +305,11 @@ window.onload = () => {
     };
   }
 
+  /* === INPUT === */
   window.addEventListener("keydown", e => keys[e.key] = true);
   window.addEventListener("keyup", e => keys[e.key] = false);
 
+  /* === MATH === */
   function generateQuestion(topic, grade) {
     const max = grade * 10;
     let a = Math.floor(Math.random()*max);
@@ -343,6 +354,7 @@ window.onload = () => {
     updateHUD();
   };
 
+  /* === COLLISION === */
   function overlap(a,b){
     return a.x < b.x+b.w &&
            a.x+a.w > b.x &&
@@ -350,6 +362,7 @@ window.onload = () => {
            a.y+a.h > b.y;
   }
 
+  /* === LOAD LEVEL === */
   function loadLevel(i){
     const L = LEVELS[i];
     currentLevel = i;
@@ -365,6 +378,7 @@ window.onload = () => {
     player = createPlayer();
     updateHUD();
 
+    /* Falling objects */
     if(L.falling){
       setInterval(() => {
         fallingObjects.push({
@@ -377,6 +391,7 @@ window.onload = () => {
       }, 1200);
     }
 
+    /* Shooter enemies */
     enemies.forEach(e => {
       if(e.type === "shooter"){
         setInterval(() => {
@@ -392,6 +407,7 @@ window.onload = () => {
     });
   }
 
+  /* === HUD === */
   function updateHUD(){
     livesEl.innerHTML = "";
     for(let i=0;i<lives;i++) livesEl.innerHTML += "<span></span>";
@@ -400,6 +416,7 @@ window.onload = () => {
     ammoEl.textContent = `Ammo: ${ammo}/${maxAmmo}`;
   }
 
+  /* === GAME OVER === */
   function showGameOver(){
     gameRunning = false;
     gameOverScreen.style.display = "flex";
@@ -412,6 +429,7 @@ window.onload = () => {
     gameOverScreen.style.display = "none";
   };
 
+  /* === NEXT LEVEL === */
   btnNext.onclick = () => {
     levelCompleteScreen.style.display = "none";
     currentLevel++;
@@ -420,6 +438,7 @@ window.onload = () => {
     gameRunning = true;
   };
 
+  /* === RELOAD === */
   function reloadWeapon(){
     canShoot = false;
     ammoEl.textContent = "Reloading...";
@@ -430,6 +449,7 @@ window.onload = () => {
     }, reloadTime);
   }
 
+  /* === SHOOT === */
   function shootBullet(){
     if (!canShoot) return;
     if (ammo <= 0) {
@@ -454,6 +474,7 @@ window.onload = () => {
     if (ammo === 0) reloadWeapon();
   }
 
+  /* === UPDATE === */
   function update(){
     if(!gameRunning) return;
 
@@ -536,31 +557,4 @@ window.onload = () => {
       }
     }
 
-    fallingObjects = fallingObjects.filter(o => !o.dead && o.y < 600);
-
-    for(const e of enemies){
-      if(overlap(player,e)) lives--;
-    }
-
-    for(const s of spikes){
-      if(overlap(player,s)) lives--;
-    }
-
-    for(const m of portals){
-      if(!m.solved && overlap(player,m)) openMathDialog(m);
-    }
-
-    if(lives<=0) showGameOver();
-
-    if(portals.length && portals.every(p => p.solved)){
-      gameRunning = false;
-      levelCompleteScreen.style.display = "flex";
-    }
-  }
-
-  function drawPixelCharacter(px,py){
-    ctx.fillStyle="#ffcc99";
-    ctx.fillRect(px+8,py,10,10);
-
-    ctx.fillStyle="#000";
-    ctx.fillRect(px+11,py+3,2,
+    fallingObjects = fallingObjects.filter(o => !o
