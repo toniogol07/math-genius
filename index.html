@@ -162,11 +162,9 @@
 <script>
 window.onload = () => {
 
-  /* === CANVAS === */
   const canvas = document.getElementById("game");
   const ctx = canvas.getContext("2d");
 
-  /* === DOM === */
   const startScreen = document.getElementById("start-screen");
   const mathDialog = document.getElementById("math-dialog");
   const gameOverScreen = document.getElementById("game-over");
@@ -189,7 +187,6 @@ window.onload = () => {
   const answerEl = document.getElementById("answer");
   const feedbackEl = document.getElementById("feedback");
 
-  /* === GAME STATE === */
   let keys = {};
   let gameRunning = false;
   let currentTopic = "add";
@@ -209,16 +206,15 @@ window.onload = () => {
   let currentQuestion = null;
   let pendingPortal = null;
 
-  /* === AMMO SYSTEM === */
   let ammo = 7;
   let maxAmmo = 7;
   let canShoot = true;
   let shootCooldown = 500;
   let reloadTime = 1200;
 
-  /* === LEVELS === */
+  let lastFallTime = 0;
+
   const LEVELS = [
-    /* === LEVEL 1 === */
     {
       name:"Level 1",
       platforms:[
@@ -228,17 +224,16 @@ window.onload = () => {
         {x:620,y:260,w:180,h:20}
       ],
       enemies:[
-        {x:260,y:450,w:32,h:32,type:"normal"},
+        {x:260,y:448,w:32,h:32,type:"normal"}
       ],
       spikes:[
         {x:520,y:460,w:40,h:20}
       ],
       portals:[
         {x:650,y:220,w:40,h:40,solved:false}
-      ]
+      ],
+      falling:false
     },
-
-    /* === LEVEL 2 === */
     {
       name:"Level 2",
       platforms:[
@@ -251,9 +246,9 @@ window.onload = () => {
         {x:720,y:260,w:120,h:20}
       ],
       enemies:[
-        {x:180,y:450,w:32,h:32,type:"normal"},
-        {x:360,y:450,w:32,h:32,type:"normal"},
-        {x:640,y:450,w:32,h:32,type:"normal"}
+        {x:180,y:448,w:32,h:32,type:"normal"},
+        {x:360,y:448,w:32,h:32,type:"normal"},
+        {x:640,y:448,w:32,h:32,type:"normal"}
       ],
       spikes:[
         {x:260,y:460,w:60,h:20},
@@ -262,10 +257,9 @@ window.onload = () => {
       ],
       portals:[
         {x:760,y:220,w:40,h:40,solved:false}
-      ]
+      ],
+      falling:false
     },
-
-    /* === LEVEL 3 — SKYDEFJENDER + FALLING OBJECTS === */
     {
       name:"Level 3 – Boss Zone",
       platforms:[
@@ -275,9 +269,9 @@ window.onload = () => {
         {x:700,y:260,w:160,h:20}
       ],
       enemies:[
-        {x:300,y:350,w:32,h:32,type:"shooter"},
-        {x:500,y:290,w:32,h:32,type:"shooter"},
-        {x:750,y:230,w:32,h:32,type:"shooter"}
+        {x:300,y:348,w:32,h:32,type:"shooter",lastShot:0},
+        {x:500,y:288,w:32,h:32,type:"shooter",lastShot:0},
+        {x:750,y:228,w:32,h:32,type:"shooter",lastShot:0}
       ],
       spikes:[
         {x:260,y:460,w:60,h:20},
@@ -291,7 +285,6 @@ window.onload = () => {
     }
   ];
 
-  /* === PLAYER === */
   function createPlayer() {
     return {
       x:40,
@@ -305,11 +298,9 @@ window.onload = () => {
     };
   }
 
-  /* === INPUT === */
   window.addEventListener("keydown", e => keys[e.key] = true);
   window.addEventListener("keyup", e => keys[e.key] = false);
 
-  /* === MATH === */
   function generateQuestion(topic, grade) {
     const max = grade * 10;
     let a = Math.floor(Math.random()*max);
@@ -354,7 +345,6 @@ window.onload = () => {
     updateHUD();
   };
 
-  /* === COLLISION === */
   function overlap(a,b){
     return a.x < b.x+b.w &&
            a.x+a.w > b.x &&
@@ -362,7 +352,6 @@ window.onload = () => {
            a.y+a.h > b.y;
   }
 
-  /* === LOAD LEVEL === */
   function loadLevel(i){
     const L = LEVELS[i];
     currentLevel = i;
@@ -376,38 +365,10 @@ window.onload = () => {
     ammo = maxAmmo;
     canShoot = true;
     player = createPlayer();
+    lastFallTime = performance.now();
     updateHUD();
-
-    /* Falling objects */
-    if(L.falling){
-      setInterval(() => {
-        fallingObjects.push({
-          x: Math.random()*900,
-          y: -20,
-          w:20,
-          h:20,
-          vy:4
-        });
-      }, 1200);
-    }
-
-    /* Shooter enemies */
-    enemies.forEach(e => {
-      if(e.type === "shooter"){
-        setInterval(() => {
-          enemyBullets.push({
-            x: e.x,
-            y: e.y,
-            r:6,
-            speed:4,
-            dir: player.x > e.x ? 1 : -1
-          });
-        }, 1500);
-      }
-    });
   }
 
-  /* === HUD === */
   function updateHUD(){
     livesEl.innerHTML = "";
     for(let i=0;i<lives;i++) livesEl.innerHTML += "<span></span>";
@@ -416,7 +377,6 @@ window.onload = () => {
     ammoEl.textContent = `Ammo: ${ammo}/${maxAmmo}`;
   }
 
-  /* === GAME OVER === */
   function showGameOver(){
     gameRunning = false;
     gameOverScreen.style.display = "flex";
@@ -429,7 +389,6 @@ window.onload = () => {
     gameOverScreen.style.display = "none";
   };
 
-  /* === NEXT LEVEL === */
   btnNext.onclick = () => {
     levelCompleteScreen.style.display = "none";
     currentLevel++;
@@ -438,7 +397,6 @@ window.onload = () => {
     gameRunning = true;
   };
 
-  /* === RELOAD === */
   function reloadWeapon(){
     canShoot = false;
     ammoEl.textContent = "Reloading...";
@@ -449,7 +407,6 @@ window.onload = () => {
     }, reloadTime);
   }
 
-  /* === SHOOT === */
   function shootBullet(){
     if (!canShoot) return;
     if (ammo <= 0) {
@@ -474,9 +431,44 @@ window.onload = () => {
     if (ammo === 0) reloadWeapon();
   }
 
-  /* === UPDATE === */
+  function updateShooterEnemies(now){
+    for(const e of enemies){
+      if(e.type === "shooter"){
+        if(!e.lastShot) e.lastShot = 0;
+        if(now - e.lastShot > 1500){
+          const dir = player.x > e.x ? 1 : -1;
+          enemyBullets.push({
+            x: e.x + e.w/2,
+            y: e.y + e.h/2,
+            r: 5,
+            speed: 4,
+            dir
+          });
+          e.lastShot = now;
+        }
+      }
+    }
+  }
+
+  function updateFallingObjects(now){
+    const L = LEVELS[currentLevel];
+    if(!L.falling) return;
+    if(now - lastFallTime > 900){
+      fallingObjects.push({
+        x: Math.random()*900,
+        y: -20,
+        w:20,
+        h:20,
+        vy:4
+      });
+      lastFallTime = now;
+    }
+  }
+
   function update(){
     if(!gameRunning) return;
+
+    const now = performance.now();
 
     player.vx = 0;
 
@@ -518,7 +510,6 @@ window.onload = () => {
     for(const b of bullets){
       b.x += b.speed * b.dir;
     }
-
     bullets = bullets.filter(b => b.x < 1000 && b.x > -100);
 
     for(const b of bullets){
@@ -532,9 +523,10 @@ window.onload = () => {
         }
       }
     }
-
     enemies = enemies.filter(e => !e.dead);
     bullets = bullets.filter(b => !b.dead);
+
+    updateShooterEnemies(now);
 
     for(const eb of enemyBullets){
       eb.x += eb.speed * eb.dir;
@@ -546,8 +538,9 @@ window.onload = () => {
         eb.dead = true;
       }
     }
+    enemyBullets = enemyBullets.filter(b => !b.dead && b.x>-50 && b.x<1010);
 
-    enemyBullets = enemyBullets.filter(b => !b.dead);
+    updateFallingObjects(now);
 
     for(const obj of fallingObjects){
       obj.y += obj.vy;
@@ -556,5 +549,132 @@ window.onload = () => {
         obj.dead = true;
       }
     }
+    fallingObjects = fallingObjects.filter(o => !o.dead && o.y<600);
 
-    fallingObjects = fallingObjects.filter(o => !o
+    for(const e of enemies){
+      if(overlap(player,e)) lives--;
+    }
+
+    for(const s of spikes){
+      if(overlap(player,s)) lives--;
+    }
+
+    for(const m of portals){
+      if(!m.solved && overlap(player,m)) openMathDialog(m);
+    }
+
+    if(lives<=0) showGameOver();
+
+    if(portals.length && portals.every(p => p.solved)){
+      gameRunning = false;
+      levelCompleteScreen.style.display = "flex";
+    }
+  }
+
+  function drawPixelCharacter(px,py){
+    ctx.fillStyle="#ffcc99";
+    ctx.fillRect(px+8,py,10,10);
+
+    ctx.fillStyle="#000";
+    ctx.fillRect(px+11,py+3,2,2);
+
+    ctx.fillStyle="#ff0000";
+    ctx.fillRect(px+6,py+10,14,12);
+
+    ctx.fillStyle="#000";
+    ctx.fillRect(px+6,py+22,6,10);
+    ctx.fillRect(px+14,py+22,6,10);
+
+    ctx.fillStyle="#444";
+    if (player.facing === 1) {
+      ctx.fillRect(px+20,py+12,10,4);
+    } else {
+      ctx.fillRect(px-4,py+12,10,4);
+    }
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    ctx.fillStyle="#4caf50";
+    ctx.beginPath();
+    ctx.arc(200,480,120,Math.PI,0);
+    ctx.arc(500,480,160,Math.PI,0);
+    ctx.arc(800,480,140,Math.PI,0);
+    ctx.fill();
+
+    for(const p of platforms){
+      ctx.fillStyle="#8b5a2b";
+      ctx.fillRect(p.x,p.y,p.w,p.h);
+      ctx.fillStyle="#3f8f3f";
+      ctx.fillRect(p.x,p.y-6,p.w,8);
+    }
+
+    for(const s of spikes){
+      ctx.fillStyle="#ccc";
+      for(let i=0;i<s.w;i+=10){
+        ctx.beginPath();
+        ctx.moveTo(s.x+i, s.y+s.h);
+        ctx.lineTo(s.x+i+5, s.y);
+        ctx.lineTo(s.x+i+10, s.y+s.h);
+        ctx.fill();
+      }
+    }
+
+    for(const e of enemies){
+      ctx.fillStyle = e.type==="shooter" ? "#ff8800" : "#e74c3c";
+      ctx.fillRect(e.x,e.y,e.w,e.h);
+    }
+
+    for(const m of portals){
+      ctx.strokeStyle = m.solved ? "#4cd964" : "#4ec0ff";
+      ctx.lineWidth = 3;
+      ctx.strokeRect(m.x,m.y,m.w,m.h);
+    }
+
+    for(const b of bullets){
+      ctx.fillStyle="yellow";
+      ctx.beginPath();
+      ctx.arc(b.x,b.y,b.r,0,Math.PI*2);
+      ctx.fill();
+    }
+
+    for(const eb of enemyBullets){
+      ctx.fillStyle="orange";
+      ctx.beginPath();
+      ctx.arc(eb.x,eb.y,eb.r,0,Math.PI*2);
+      ctx.fill();
+    }
+
+    for(const o of fallingObjects){
+      ctx.fillStyle="#555";
+      ctx.fillRect(o.x,o.y,o.w,o.h);
+    }
+
+    drawPixelCharacter(player.x,player.y);
+  }
+
+  function loop(){
+    update();
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  btnStart.onclick = () => {
+    currentTopic = topicSelect.value;
+    currentGrade = parseInt(gradeSelect.value);
+    lives = 3;
+    currentLevel = 0;
+    loadLevel(currentLevel);
+    startScreen.style.display = "none";
+    gameRunning = true;
+  };
+
+  loadLevel(0);
+  loop();
+
+};
+</script>
+
+</body>
+</html>
