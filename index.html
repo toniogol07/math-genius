@@ -1,474 +1,47 @@
-<!DOCTYPE html>
-<html lang="da">
-<head>
-<meta charset="UTF-8">
-<title>Math Genius – 4 Levels Scroll Edition</title>
-<style>
-  * { margin:0; padding:0; box-sizing:border-box; }
-  body {
-    background:#6ec6ff;
-    font-family:Arial, sans-serif;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    height:100vh;
-    overflow:hidden;
-  }
+<!-- === STARTSKÆRM === -->
+<div id="startScreen">
+  <h1>Math Platformer</h1>
 
-  #game-container {
-    width:960px;
-    height:540px;
-    position:relative;
-    border-radius:12px;
-    overflow:hidden;
-    box-shadow:0 20px 40px rgba(0,0,0,0.4);
-  }
+  <label>Vælg emne:</label>
+  <select id="topicSelect">
+    <option value="add">Addition</option>
+    <option value="sub">Subtraktion</option>
+    <option value="mul">Multiplikation</option>
+    <option value="div">Division</option>
+  </select>
 
-  canvas {
-    width:100%;
-    height:100%;
-    display:block;
-    background:#6ec6ff;
-  }
+  <label>Vælg klassetrin:</label>
+  <select id="gradeSelect">
+    <option value="1">1. klasse</option>
+    <option value="2">2. klasse</option>
+    <option value="3">3. klasse</option>
+    <option value="4">4. klasse</option>
+    <option value="5">5. klasse</option>
+  </select>
 
-  #hud {
-    position:absolute;
-    top:10px;
-    left:10px;
-    right:10px;
-    display:flex;
-    justify-content:space-between;
-    color:white;
-    font-weight:bold;
-    text-shadow:0 2px 4px rgba(0,0,0,0.6);
-    pointer-events:none;
-  }
-
-  #lives span {
-    display:inline-block;
-    width:20px;
-    height:20px;
-    background:red;
-    border-radius:50%;
-    margin-right:4px;
-    box-shadow:0 0 6px rgba(0,0,0,0.6);
-  }
-
-  #ammo {
-    position:absolute;
-    bottom:10px;
-    left:10px;
-    color:white;
-    font-size:18px;
-    font-weight:bold;
-    text-shadow:0 2px 4px black;
-  }
-
-  .screen {
-    position:absolute;
-    inset:0;
-    background:rgba(0,0,0,0.6);
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    flex-direction:column;
-    color:white;
-  }
-
-  .panel {
-    background:rgba(0,0,0,0.85);
-    padding:20px 30px;
-    border-radius:12px;
-    min-width:340px;
-    text-align:center;
-  }
-
-  button {
-    padding:10px 20px;
-    border:none;
-    border-radius:8px;
-    background:#ffcc00;
-    font-weight:bold;
-    cursor:pointer;
-    margin-top:10px;
-  }
-
-  .level-btn {
-    display:block;
-    width:100%;
-    margin:6px 0;
-  }
-
-  .locked {
-    background:#777;
-    cursor:not-allowed;
-  }
-
-  .locked::after {
-    content:" 🔒";
-  }
-
-  .small-label {
-    font-size:12px;
-    opacity:0.8;
-    margin-top:6px;
-  }
-</style>
-</head>
-<body>
-
-<div id="game-container">
-  <canvas id="game" width="960" height="540"></canvas>
-
-  <div id="hud">
-    <div id="lives"></div>
-    <div id="info"></div>
-    <div id="level-name"></div>
+  <h2>Levels</h2>
+  <div id="levelButtons">
+    <button data-level="0">Level 1</button>
+    <button data-level="1">Level 2</button>
+    <button data-level="2">Level 3</button>
+    <button data-level="3">Level 4</button>
+    <button data-level="4">Level 5</button>
+    <button data-level="5">Level 6</button>
+    <button data-level="6">Level 7</button>
+    <button data-level="7">Level 8</button>
+    <button data-level="8">Level 9</button>
+    <button data-level="9">Level 10</button>
   </div>
-
-  <div id="ammo">Ammo: 7/7</div>
-
-  <!-- LEVEL SELECT / START -->
-  <div id="start-screen" class="screen">
-    <div class="panel">
-      <h1>Math Genius</h1>
-
-      <div class="small-label">Vælg matematik emne</div>
-      <select id="topic">
-        <option value="add">Addition</option>
-        <option value="sub">Subtraktion</option>
-        <option value="mul">Multiplikation</option>
-        <option value="div">Division</option>
-      </select>
-
-      <div class="small-label">Vælg årgang</div>
-      <select id="grade">
-        <option value="1">1. klasse</option>
-        <option value="2">2. klasse</option>
-        <option value="3">3. klasse</option>
-        <option value="4">4. klasse</option>
-        <option value="5">5. klasse</option>
-        <option value="6">6. klasse</option>
-      </select>
-
-      <h3 style="margin-top:15px;">Vælg level</h3>
-      <button class="level-btn" data-level="0" id="btn-lv1">Level 1</button>
-      <button class="level-btn locked" data-level="1" id="btn-lv2">Level 2</button>
-      <button class="level-btn locked" data-level="2" id="btn-lv3">Level 3</button>
-      <button class="level-btn locked" data-level="3" id="btn-lv4">Level 4</button>
-
-      <div class="small-label">Klar en level for at låse den næste op</div>
-    </div>
-  </div>
-
-  <!-- MATH DIALOG -->
-  <div id="math-dialog" class="screen" style="display:none;">
-    <div class="panel">
-      <h2>Matematik</h2>
-      <div id="question" style="margin-bottom:8px;"></div>
-      <input type="number" id="answer">
-      <button id="btn-answer">Svar</button>
-      <div id="feedback" style="margin-top:6px;font-size:13px;"></div>
-    </div>
-  </div>
-
-  <!-- GAME OVER -->
-  <div id="game-over" class="screen" style="display:none;">
-    <div class="panel">
-      <h1>Game Over</h1>
-      <button id="btn-restart">Til level‑menu</button>
-    </div>
-  </div>
-
-  <!-- LEVEL COMPLETE -->
-  <div id="level-complete" class="screen" style="display:none;">
-    <div class="panel">
-      <h1>Level gennemført!</h1>
-      <button id="btn-next">Tilbage til level‑menu</button>
-    </div>
-  </div>
-
 </div>
 
 <script>
-window.onload = () => {
-  const canvas = document.getElementById("game");
-  const ctx = canvas.getContext("2d");
+  // === UNLOCK SYSTEM FOR 10 LEVELS ===
+  let unlockedLevels = [true, false, false, false, false, false, false, false, false, false];
 
-  const startScreen = document.getElementById("start-screen");
-  const mathDialog = document.getElementById("math-dialog");
-  const gameOverScreen = document.getElementById("game-over");
-  const levelCompleteScreen = document.getElementById("level-complete");
+  const levelButtons = Array.from(document.querySelectorAll("#levelButtons button"));
 
-  const btnAnswer = document.getElementById("btn-answer");
-  const btnRestart = document.getElementById("btn-restart");
-  const btnNext = document.getElementById("btn-next");
-
-  const topicSelect = document.getElementById("topic");
-  const gradeSelect = document.getElementById("grade");
-
-  const livesEl = document.getElementById("lives");
-  const infoEl = document.getElementById("info");
-  const levelNameEl = document.getElementById("level-name");
-  const ammoEl = document.getElementById("ammo");
-
-  const questionEl = document.getElementById("question");
-  const answerEl = document.getElementById("answer");
-  const feedbackEl = document.getElementById("feedback");
-
-  const levelButtons = [
-    document.getElementById("btn-lv1"),
-    document.getElementById("btn-lv2"),
-    document.getElementById("btn-lv3"),
-    document.getElementById("btn-lv4")
-  ];
-
-  let keys = {};
-  let gameRunning = false;
-  let currentTopic = "add";
-  let currentGrade = 1;
-  let currentLevel = 0;
-  let lives = 3;
-
-  let player;
-  let platforms = [];
-  let enemies = [];
-  let spikes = [];
-  let portals = [];
-  let bullets = [];
-  let enemyBullets = [];
-  let fallingObjects = [];
-
-  let currentQuestion = null;
-  let pendingPortal = null;
-
-  let ammo = 7;
-  let maxAmmo = 7;
-  let canShoot = true;
-  let shootCooldown = 500;
-  let reloadTime = 1200;
-
-  let lastFallTime = 0;
-  let worldWidth = 4000;
-  let cameraX = 0;
-
-  let unlockedLevels = [true, false, false, false];
-  // === PLAYER CREATION ===
-  function createPlayer() {
-    return {
-      x:40,
-      y:420,
-      w:26,
-      h:40,
-      vx:0,
-      vy:0,
-      onGround:false,
-      facing:1
-    };
-  }
-
-  // === INPUT ===
-  window.addEventListener("keydown", e => keys[e.key] = true);
-  window.addEventListener("keyup", e => keys[e.key] = false);
-
-  // === MATH QUESTIONS ===
-  function generateQuestion(topic, grade) {
-    const max = grade * 10;
-    let a = Math.floor(Math.random()*max);
-    let b = Math.floor(Math.random()*max);
-    let text, answer;
-
-    if(topic==="add"){ text=`${a} + ${b}`; answer=a+b; }
-    if(topic==="sub"){ text=`${a} - ${b}`; answer=a-b; }
-    if(topic==="mul"){ text=`${a} × ${b}`; answer=a*b; }
-    if(topic==="div"){
-      b = b || 1;
-      a = b * Math.floor(Math.random()*10);
-      text=`${a} ÷ ${b}`;
-      answer=a/b;
-    }
-
-    return {text, answer};
-  }
-
-  function openMathDialog(portal){
-    pendingPortal = portal;
-    currentQuestion = generateQuestion(currentTopic, currentGrade);
-    questionEl.textContent = currentQuestion.text;
-    answerEl.value = "";
-    feedbackEl.textContent = "";
-    mathDialog.style.display = "flex";
-    gameRunning = false;
-  }
-
-  btnAnswer.onclick = () => {
-    const val = parseInt(answerEl.value);
-    if(val === currentQuestion.answer){
-      pendingPortal.solved = true;
-      feedbackEl.textContent = "Korrekt!";
-    } else {
-      lives--;
-      feedbackEl.textContent = "Forkert! Du mister et liv.";
-      if(lives<=0){
-        updateHUD();
-        setTimeout(showGameOver, 400);
-        mathDialog.style.display = "none";
-        return;
-      }
-    }
-    updateHUD();
-    setTimeout(() => {
-      mathDialog.style.display = "none";
-      gameRunning = true;
-    }, 400);
-  };
-
-  // === COLLISION ===
-  function overlap(a,b){
-    return a.x < b.x+b.w &&
-           a.x+a.w > b.x &&
-           a.y < b.y+b.h &&
-           a.y+a.h > b.y;
-  }
-
-  // === LOAD LEVEL ===
-  function loadLevel(i){
-    const L = LEVELS[i];
-    currentLevel = i;
-    platforms = L.platforms.map(p=>({...p}));
-    enemies = L.enemies.map(e=>({...e}));
-    spikes = L.spikes.map(s=>({...s}));
-    portals = L.portals.map(p=>({...p}));
-    bullets = [];
-    enemyBullets = [];
-    fallingObjects = [];
-    ammo = maxAmmo;
-    canShoot = true;
-    player = createPlayer();
-    lastFallTime = performance.now();
-    cameraX = 0;
-    updateHUD();
-  }
-
-  // === HUD ===
-  function updateHUD(){
-    livesEl.innerHTML = "";
-    for(let i=0;i<lives;i++) livesEl.innerHTML += "<span></span>";
-    infoEl.textContent = `${currentTopic} · ${currentGrade}. kl`;
-    levelNameEl.textContent = LEVELS[currentLevel].name;
-    ammoEl.textContent = `Ammo: ${ammo}/${maxAmmo}`;
-  }
-
-  // === GAME OVER ===
-  function showGameOver(){
-    gameRunning = false;
-    gameOverScreen.style.display = "flex";
-  }
-
-  btnRestart.onclick = () => {
-    gameOverScreen.style.display = "none";
-    startScreen.style.display = "flex";
-  };
-
-  btnNext.onclick = () => {
-    levelCompleteScreen.style.display = "none";
-    startScreen.style.display = "flex";
-  };
-
-  // === SHOOTING ===
-  function reloadWeapon(){
-    canShoot = false;
-    ammoEl.textContent = "Reloading...";
-    setTimeout(() => {
-      ammo = maxAmmo;
-      canShoot = true;
-      updateHUD();
-    }, reloadTime);
-  }
-
-  function shootBullet(){
-    if (!canShoot) return;
-    if (ammo <= 0) {
-      reloadWeapon();
-      return;
-    }
-
-    bullets.push({
-      x: player.facing === 1 ? player.x + player.w : player.x,
-      y: player.y + player.h/2,
-      r: 6,
-      speed: 10,
-      dir: player.facing
-    });
-
-    ammo--;
-    updateHUD();
-
-    canShoot = false;
-    setTimeout(() => canShoot = true, shootCooldown);
-
-    if (ammo === 0) reloadWeapon();
-  }
-
-  // === ENEMY SHOOTING ===
-  function updateShooterEnemies(now){
-    for(const e of enemies){
-      if(e.type === "shooter" || e.type === "movingShooter"){
-        if(!e.lastShot) e.lastShot = 0;
-        if(now - e.lastShot > 1500){
-          const dir = player.x > e.x ? 1 : -1;
-          enemyBullets.push({
-            x: e.x + e.w/2,
-            y: e.y + e.h/2,
-            r: 5,
-            speed: 4,
-            dir
-          });
-          e.lastShot = now;
-        }
-      }
-    }
-  }
-
-  // === MOVING SHOOTERS ===
-  function updateMovingEnemies(){
-    for(const e of enemies){
-      if(e.type === "movingShooter"){
-        e.x += e.dir * 2;
-        if(e.x < e.origin || e.x > e.origin + e.range){
-          e.dir *= -1;
-        }
-      }
-    }
-  }
-
-  // === FALLING OBJECTS (LEVEL 3) ===
-  function updateFallingObjects(now){
-    const L = LEVELS[currentLevel];
-    if(!L.falling) return;
-    if(now - lastFallTime > 900){
-      fallingObjects.push({
-        x: Math.random()*(worldWidth-40),
-        y: -20,
-        w:20,
-        h:20,
-        vy:4
-      });
-      lastFallTime = now;
-    }
-  }
-
-  // === CAMERA ===
-  function updateCamera(){
-    const center = canvas.width/2;
-    cameraX = player.x - center + player.w/2;
-    if(cameraX < 0) cameraX = 0;
-    if(cameraX > worldWidth - canvas.width) cameraX = worldWidth - canvas.width;
-  }
-
-  // === LEVEL SELECT UNLOCK ===
   function refreshLevelButtons(){
-    levelButtons.forEach((btn,idx)=>{
+    levelButtons.forEach((btn, idx) => {
       if(unlockedLevels[idx]){
         btn.classList.remove("locked");
         btn.disabled = false;
@@ -479,432 +52,385 @@ window.onload = () => {
     });
   }
 
-  levelButtons.forEach(btn=>{
-    btn.onclick = () => {
-      const lvl = parseInt(btn.getAttribute("data-level"));
-      if(!unlockedLevels[lvl]) return;
-      currentTopic = topicSelect.value;
-      currentGrade = parseInt(gradeSelect.value);
-      lives = 3;
-      loadLevel(lvl);
-      startScreen.style.display = "none";
-      gameRunning = true;
-    };
-  });
-
   refreshLevelButtons();
-  // === LEVEL DATA (platforme lidt tættere) ===
+  // === LEVELS ARRAY (10 LEVELS) ===
+  // Vi udfylder hvert level i DEL 3–12
   const LEVELS = [
-    // LEVEL 1
-    {
-      name:"Level 1 – Intro",
-      platforms:[
-        {x:0,y:480,w:600,h:60},
-        {x:650,y:420,w:200,h:20},
-        {x:900,y:360,w:200,h:20},
-        {x:1150,y:320,w:200,h:20},
-        {x:1400,y:280,w:200,h:20},
-        {x:1650,y:320,w:200,h:20},
-        {x:1900,y:360,w:200,h:20},
-        {x:2150,y:380,w:200,h:20},
-        {x:2400,y:360,w:200,h:20},
-        {x:2650,y:340,w:200,h:20}
-      ],
-      enemies:[
-        {x:750,y:388,w:32,h:32,type:"normal"},
-        {x:1050,y:328,w:32,h:32,type:"normal"}
-      ],
-      spikes:[
-        {x:600,y:460,w:80,h:20},
-        {x:1900,y:460,w:80,h:20}
-      ],
-      portals:[
-        {x:2720,y:300,w:40,h:40,solved:false}
-      ],
-      falling:false
-    },
-
-    // LEVEL 2
-    {
-      name:"Level 2 – Farligere",
-      platforms:[
-        {x:0,y:480,w:400,h:60},
-        {x:450,y:420,w:200,h:20},
-        {x:700,y:360,w:200,h:20},
-        {x:950,y:320,w:200,h:20},
-        {x:1200,y:280,w:200,h:20},
-        {x:1450,y:320,w:200,h:20},
-        {x:1700,y:360,w:200,h:20},
-        {x:1950,y:380,w:200,h:20},
-        {x:2200,y:360,w:200,h:20},
-        {x:2450,y:340,w:200,h:20}
-      ],
-      enemies:[
-        {x:520,y:388,w:32,h:32,type:"normal"},
-        {x:820,y:328,w:32,h:32,type:"normal"},
-        {x:1520,y:248,w:32,h:32,type:"normal"},
-        {x:2220,y:328,w:32,h:32,type:"normal"}
-      ],
-      spikes:[
-        {x:400,y:460,w:80,h:20},
-        {x:1000,y:460,w:80,h:20},
-        {x:1800,y:460,w:80,h:20},
-        {x:2600,y:460,w:80,h:20}
-      ],
-      portals:[
-        {x:2500,y:300,w:40,h:40,solved:false}
-      ],
-      falling:false
-    },
-
-    // LEVEL 3
-    {
-      name:"Level 3 – Skydefjender & fald",
-      platforms:[
-        {x:0,y:480,w:500,h:60},
-        {x:550,y:420,w:200,h:20},
-        {x:800,y:360,w:200,h:20},
-        {x:1050,y:320,w:200,h:20},
-        {x:1300,y:280,w:200,h:20},
-        {x:1550,y:320,w:200,h:20},
-        {x:1800,y:360,w:200,h:20},
-        {x:2050,y:320,w:200,h:20},
-        {x:2300,y:300,w:200,h:20},
-        {x:2550,y:280,w:200,h:20}
-      ],
-      enemies:[
-        {x:620,y:388,w:32,h:32,type:"shooter",lastShot:0},
-        {x:920,y:328,w:32,h:32,type:"shooter",lastShot:0},
-        {x:2020,y:288,w:32,h:32,type:"shooter",lastShot:0},
-        {x:2320,y:268,w:32,h:32,type:"shooter",lastShot:0}
-      ],
-      spikes:[
-        {x:500,y:460,w:80,h:20},
-        {x:1100,y:460,w:80,h:20},
-        {x:1700,y:460,w:80,h:20},
-        {x:2400,y:460,w:80,h:20}
-      ],
-      portals:[
-        {x:2600,y:240,w:40,h:40,solved:false}
-      ],
-      falling:true
-    },
-
-    // LEVEL 4
-    {
-      name:"Level 4 – Moving Shooters",
-      platforms:[
-        {x:0,y:480,w:500,h:60},
-        {x:550,y:420,w:260,h:20},
-        {x:850,y:360,w:260,h:20},
-        {x:1150,y:320,w:260,h:20},
-        {x:1450,y:280,w:260,h:20},
-        {x:1750,y:320,w:260,h:20},
-        {x:2050,y:360,w:260,h:20},
-        {x:2350,y:320,w:260,h:20},
-        {x:2650,y:280,w:260,h:20}
-      ],
-      enemies:[
-        {x:610,y:388,w:32,h:32,type:"movingShooter",dir:1,range:180,origin:610,lastShot:0},
-        {x:1010,y:328,w:32,h:32,type:"movingShooter",dir:-1,range:180,origin:1240,lastShot:0},
-        {x:1910,y:248,w:32,h:32,type:"movingShooter",dir:1,range:200,origin:1910,lastShot:0},
-        {x:2410,y:288,w:32,h:32,type:"movingShooter",dir:-1,range:200,origin:2650,lastShot:0}
-      ],
-      spikes:[
-        {x:500,y:460,w:80,h:20},
-        {x:900,y:460,w:80,h:20},
-        {x:1500,y:460,w:80,h:20},
-        {x:2000,y:460,w:80,h:20},
-        {x:2600,y:460,w:80,h:20}
-      ],
-      portals:[
-        {x:2700,y:240,w:40,h:40,solved:false}
-      ],
-      falling:false
-    }
+    {}, // Level 1
+    {}, // Level 2
+    {}, // Level 3
+    {}, // Level 4
+    {}, // Level 5
+    {}, // Level 6
+    {}, // Level 7
+    {}, // Level 8
+    {}, // Level 9 (mini-boss)
+    {}  // Level 10 (stor boss)
   ];
-  // === UPDATE LOOP ===
-  function update(){
-    if(!gameRunning) return;
+// === LEVEL 1 — Intro (meget nem) ===
+LEVELS[0] = {
+  name: "Level 1 – Intro",
+  falling: false,
+  platforms: [
+    {x:0,    y:480, w:600, h:60},
+    {x:650,  y:420, w:250, h:20},
+    {x:950,  y:380, w:250, h:20},
+    {x:1250, y:340, w:250, h:20},
+    {x:1550, y:300, w:250, h:20},
+    {x:1850, y:340, w:250, h:20},
+    {x:2150, y:380, w:250, h:20},
+    {x:2450, y:360, w:250, h:20},
+    {x:2750, y:330, w:250, h:20},
+    {x:3050, y:300, w:250, h:20},
+    {x:3350, y:340, w:250, h:20},
+    {x:3650, y:380, w:250, h:20}
+  ],
+  enemies: [],
+  spikes: [],
+  portals: [
+    {x:3900, y:340, w:40, h:40, solved:false}
+  ]
+};
+// === LEVEL 2 — Lidt fjender + lidt spikes ===
+LEVELS[1] = {
+  name: "Level 2 – Fjender & Spikes",
+  falling: false,
 
-    const now = performance.now();
+  platforms: [
+    {x:0,    y:480, w:600, h:60},
+    {x:650,  y:420, w:250, h:20},
+    {x:950,  y:380, w:250, h:20},
+    {x:1250, y:340, w:250, h:20},
+    {x:1550, y:300, w:250, h:20},
+    {x:1850, y:340, w:250, h:20},
+    {x:2150, y:380, w:250, h:20},
+    {x:2450, y:360, w:250, h:20},
+    {x:2750, y:330, w:250, h:20},
+    {x:3050, y:300, w:250, h:20},
+    {x:3350, y:340, w:250, h:20},
+    {x:3650, y:380, w:250, h:20}
+  ],
 
-    // --- PLAYER MOVEMENT ---
-    player.vx = 0;
+  enemies: [
+    {x:900,  y:350, w:40, h:40, type:"normal"},
+    {x:2100, y:350, w:40, h:40, type:"normal"}
+  ],
 
-    if(keys["ArrowLeft"]){
-      player.vx = -4;
-      player.facing = -1;
+  spikes: [
+    {x:1400, y:480, w:120, h:40},
+    {x:3000, y:480, w:120, h:40}
+  ],
+
+  portals: [
+    {x:3900, y:340, w:40, h:40, solved:false}
+  ]
+};
+// === LEVEL 3 — Skydefjender introduceres ===
+LEVELS[2] = {
+  name: "Level 3 – Skydefjender",
+  falling: false,
+
+  platforms: [
+    {x:0,    y:480, w:600, h:60},
+    {x:650,  y:420, w:250, h:20},
+    {x:950,  y:380, w:250, h:20},
+    {x:1250, y:340, w:250, h:20},
+    {x:1550, y:300, w:250, h:20},
+    {x:1850, y:340, w:250, h:20},
+    {x:2150, y:380, w:250, h:20},
+    {x:2450, y:360, w:250, h:20},
+    {x:2750, y:330, w:250, h:20},
+    {x:3050, y:300, w:250, h:20},
+    {x:3350, y:340, w:250, h:20},
+    {x:3650, y:380, w:250, h:20}
+  ],
+
+  enemies: [
+    {x:1100, y:350, w:40, h:40, type:"shooter"},
+    {x:2300, y:350, w:40, h:40, type:"shooter"},
+    {x:1700, y:350, w:40, h:40, type:"normal"}
+  ],
+
+  spikes: [
+    {x:1400, y:480, w:120, h:40},
+    {x:3000, y:480, w:120, h:40}
+  ],
+
+  portals: [
+    {x:3900, y:340, w:40, h:40, solved:false}
+  ]
+};
+// === LEVEL 4 — Faldende ting introduceres ===
+LEVELS[3] = {
+  name: "Level 4 – Faldende ting",
+  falling: true,
+
+  platforms: [
+    {x:0,    y:480, w:600, h:60},
+    {x:650,  y:420, w:250, h:20},
+    {x:950,  y:380, w:250, h:20},
+    {x:1250, y:340, w:250, h:20},
+    {x:1550, y:300, w:250, h:20},
+    {x:1850, y:340, w:250, h:20},
+    {x:2150, y:380, w:250, h:20},
+    {x:2450, y:360, w:250, h:20},
+    {x:2750, y:330, w:250, h:20},
+    {x:3050, y:300, w:250, h:20},
+    {x:3350, y:340, w:250, h:20},
+    {x:3650, y:380, w:250, h:20}
+  ],
+
+  enemies: [
+    {x:1200, y:350, w:40, h:40, type:"shooter"},
+    {x:2000, y:350, w:40, h:40, type:"normal"},
+    {x:2600, y:350, w:40, h:40, type:"normal"}
+  ],
+
+  spikes: [
+    {x:1400, y:480, w:120, h:40},
+    {x:3100, y:480, w:120, h:40}
+  ],
+
+  fallingObjects: [
+    {x:1700, y:0, w:40, h:40, speed:4},
+    {x:2900, y:0, w:40, h:40, speed:5}
+  ],
+
+  portals: [
+    {x:3900, y:340, w:40, h:40, solved:false}
+  ]
+};
+// === LEVEL 5 — Moving shooters introduceres ===
+LEVELS[4] = {
+  name: "Level 5 – Moving Shooters",
+  falling: false,
+
+  platforms: [
+    {x:0,    y:480, w:600, h:60},
+    {x:650,  y:420, w:250, h:20},
+    {x:950,  y:380, w:250, h:20},
+    {x:1250, y:340, w:250, h:20},
+    {x:1550, y:300, w:250, h:20},
+    {x:1850, y:340, w:250, h:20},
+    {x:2150, y:380, w:250, h:20},
+    {x:2450, y:360, w:250, h:20},
+    {x:2750, y:330, w:250, h:20},
+    {x:3050, y:300, w:250, h:20},
+    {x:3350, y:340, w:250, h:20},
+    {x:3650, y:380, w:250, h:20}
+  ],
+
+  enemies: [
+    {x:1100, y:350, w:40, h:40, type:"movingShooter", range:200, speed:1.5},
+    {x:2000, y:350, w:40, h:40, type:"movingShooter", range:250, speed:1.8},
+    {x:2600, y:350, w:40, h:40, type:"normal"}
+  ],
+
+  spikes: [
+    {x:1400, y:480, w:150, h:40},
+    {x:3100, y:480, w:150, h:40}
+  ],
+
+  portals: [
+    {x:3900, y:340, w:40, h:40, solved:false}
+  ]
+};
+// === LEVEL 6 — Skydefjender + faldende ting ===
+LEVELS[5] = {
+  name: "Level 6 – Kaos Kombineret",
+  falling: true,
+
+  platforms: [
+    {x:0,    y:480, w:600, h:60},
+    {x:650,  y:420, w:250, h:20},
+    {x:950,  y:380, w:250, h:20},
+    {x:1250, y:340, w:250, h:20},
+    {x:1550, y:300, w:250, h:20},
+    {x:1850, y:340, w:250, h:20},
+    {x:2150, y:380, w:250, h:20},
+    {x:2450, y:360, w:250, h:20},
+    {x:2750, y:330, w:250, h:20},
+    {x:3050, y:300, w:250, h:20},
+    {x:3350, y:340, w:250, h:20},
+    {x:3650, y:380, w:250, h:20}
+  ],
+
+  enemies: [
+    {x:900,  y:350, w:40, h:40, type:"shooter"},
+    {x:1500, y:350, w:40, h:40, type:"movingShooter", range:200, speed:1.6},
+    {x:2400, y:350, w:40, h:40, type:"movingShooter", range:250, speed:1.8},
+    {x:3100, y:350, w:40, h:40, type:"normal"}
+  ],
+
+  spikes: [
+    {x:1300, y:480, w:150, h:40},
+    {x:2900, y:480, w:150, h:40}
+  ],
+
+  fallingObjects: [
+    {x:1700, y:0, w:40, h:40, speed:4},
+    {x:2000, y:0, w:40, h:40, speed:5},
+    {x:3200, y:0, w:40, h:40, speed:6}
+  ],
+
+  portals: [
+    {x:3900, y:340, w:40, h:40, solved:false}
+  ]
+};
+// === LEVEL 7 — Hurtigere moving shooters + flere faldende ting ===
+LEVELS[6] = {
+  name: "Level 7 – Intens Platforming",
+  falling: true,
+
+  platforms: [
+    {x:0,    y:480, w:600, h:60},
+    {x:650,  y:420, w:250, h:20},
+    {x:950,  y:380, w:250, h:20},
+    {x:1250, y:340, w:250, h:20},
+    {x:1550, y:300, w:250, h:20},
+    {x:1850, y:340, w:250, h:20},
+    {x:2150, y:380, w:250, h:20},
+    {x:2450, y:360, w:250, h:20},
+    {x:2750, y:330, w:250, h:20},
+    {x:3050, y:300, w:250, h:20},
+    {x:3350, y:340, w:250, h:20},
+    {x:3650, y:380, w:250, h:20}
+  ],
+
+  enemies: [
+    {x:900,  y:350, w:40, h:40, type:"movingShooter", range:250, speed:2.0},
+    {x:1600, y:350, w:40, h:40, type:"movingShooter", range:300, speed:2.2},
+    {x:2400, y:350, w:40, h:40, type:"shooter"},
+    {x:3100, y:350, w:40, h:40, type:"normal"}
+  ],
+
+  spikes: [
+    {x:1300, y:480, w:150, h:40},
+    {x:2900, y:480, w:150, h:40},
+    {x:3500, y:480, w:150, h:40}
+  ],
+
+  fallingObjects: [
+    {x:1200, y:0, w:40, h:40, speed:5},
+    {x:1700, y:0, w:40, h:40, speed:6},
+    {x:2200, y:0, w:40, h:40, speed:7},
+    {x:3200, y:0, w:40, h:40, speed:6}
+  ],
+
+  portals: [
+    {x:3900, y:340, w:40, h:40, solved:false}
+  ]
+};
+// === LEVEL 8 — Forberedelse til mini-bossen ===
+LEVELS[7] = {
+  name: "Level 8 – Før Mini-Bossen",
+  falling: true,
+
+  platforms: [
+    {x:0,    y:480, w:600, h:60},
+    {x:650,  y:420, w:250, h:20},
+    {x:950,  y:380, w:250, h:20},
+    {x:1250, y:340, w:250, h:20},
+    {x:1550, y:300, w:250, h:20},
+    {x:1850, y:340, w:250, h:20},
+    {x:2150, y:380, w:250, h:20},
+    {x:2450, y:360, w:250, h:20},
+    {x:2750, y:330, w:250, h:20},
+    {x:3050, y:300, w:250, h:20},
+    {x:3350, y:340, w:250, h:20},
+    {x:3650, y:380, w:250, h:20}
+  ],
+
+  enemies: [
+    {x:850,  y:350, w:40, h:40, type:"movingShooter", range:250, speed:2.0},
+    {x:1400, y:350, w:40, h:40, type:"shooter"},
+    {x:1900, y:350, w:40, h:40, type:"movingShooter", range:300, speed:2.3},
+    {x:2500, y:350, w:40, h:40, type:"shooter"},
+    {x:3100, y:350, w:40, h:40, type:"normal"}
+  ],
+
+  spikes: [
+    {x:1200, y:480, w:150, h:40},
+    {x:2100, y:480, w:150, h:40},
+    {x:3300, y:480, w:150, h:40}
+  ],
+
+  fallingObjects: [
+    {x:1000, y:0, w:40, h:40, speed:5},
+    {x:1500, y:0, w:40, h:40, speed:6},
+    {x:1800, y:0, w:40, h:40, speed:7},
+    {x:2300, y:0, w:40, h:40, speed:6},
+    {x:2900, y:0, w:40, h:40, speed:7},
+    {x:3500, y:0, w:40, h:40, speed:8}
+  ],
+
+  portals: [
+    {x:3900, y:340, w:40, h:40, solved:false}
+  ]
+};
+// === LEVEL 9 — MINI-BOSS (5 HP) ===
+LEVELS[8] = {
+  name: "Level 9 – Mini-Boss",
+  falling: false,
+
+  // Arena layout (medium platform)
+  platforms: [
+    {x:0,    y:480, w:600, h:60},   // Start
+    {x:800,  y:420, w:600, h:40},   // Boss platform
+    {x:1600, y:360, w:300, h:20},   // Small upper platform left
+    {x:2100, y:360, w:300, h:20}    // Small upper platform right
+  ],
+
+  enemies: [
+    {
+      x:1000, y:380, w:80, h:80,
+      type:"boss",
+      hp:5,
+      speed:1.2,
+      shootSpeed:1800,   // slower than big boss
+      range:300
     }
-    if(keys["ArrowRight"]){
-      player.vx = 4;
-      player.facing = 1;
+  ],
+
+  spikes: [],
+
+  fallingObjects: [],
+
+  portals: [
+    {x:2600, y:320, w:50, h:50, solved:false}
+  ]
+};
+// === LEVEL 10 — STOR BOSS (12 HP) ===
+LEVELS[9] = {
+  name: "Level 10 – Stor Boss",
+  falling: false,
+
+  // Arena layout (medium platform)
+  platforms: [
+    {x:0,    y:480, w:600, h:60},   // Start
+    {x:800,  y:420, w:600, h:40},   // Boss platform
+    {x:1600, y:360, w:300, h:20},   // Upper left
+    {x:2100, y:360, w:300, h:20}    // Upper right
+  ],
+
+  enemies: [
+    {
+      x:1000, y:380, w:100, h:100,
+      type:"boss",
+      hp:12,
+      speed:1.4,
+      shootSpeed:1400,     // normal speed
+      enragedShootSpeed:900,  // when hp <= 6
+      ultraShootSpeed:600,    // when hp <= 3
+      range:350
     }
+  ],
 
-    if(keys["ArrowUp"] && player.onGround){
-      player.vy = -12;
-      player.onGround = false;
-    }
+  spikes: [],
 
-    if(keys[" "]){
-      shootBullet();
-      keys[" "] = false;
-    }
+  fallingObjects: [],
 
-    // Gravity
-    player.vy += 0.6;
-    player.x += player.vx;
-    player.y += player.vy;
-
-    // Keep inside world
-    if(player.x < 0) player.x = 0;
-    if(player.x + player.w > worldWidth) player.x = worldWidth - player.w;
-
-    // Reset ground state
-    player.onGround = false;
-
-    // --- PLATFORM COLLISION ---
-    for(const p of platforms){
-      if(overlap(player,p)){
-        if(player.vy > 0){
-          player.y = p.y - player.h;
-          player.vy = 0;
-          player.onGround = true;
-        }
-      }
-    }
-
-    // --- FALLING DEATH ---
-    if(player.y > 600){
-      lives--;
-      if(lives <= 0){
-        updateHUD();
-        showGameOver();
-      } else {
-        player = createPlayer();
-      }
-      updateHUD();
-    }
-
-    // --- PLAYER BULLETS ---
-    for(const b of bullets){
-      b.x += b.speed * b.dir;
-    }
-    bullets = bullets.filter(b => b.x < worldWidth+100 && b.x > -100);
-
-    // Bullet hits enemy
-    for(const b of bullets){
-      for(const e of enemies){
-        if(overlap({x:b.x-b.r,y:b.y-b.r,w:b.r*2,h:b.r*2}, e)){
-          e.dead = true;
-          b.dead = true;
-        }
-      }
-    }
-    enemies = enemies.filter(e => !e.dead);
-    bullets = bullets.filter(b => !b.dead);
-
-    // --- ENEMY MOVEMENT & SHOOTING ---
-    updateMovingEnemies();
-    updateShooterEnemies(now);
-
-    // --- ENEMY BULLETS ---
-    for(const eb of enemyBullets){
-      eb.x += eb.speed * eb.dir;
-      if(overlap({x:eb.x-eb.r,y:eb.y-eb.r,w:eb.r*2,h:eb.r*2}, player)){
-        lives--;
-        eb.dead = true;
-      }
-    }
-    enemyBullets = enemyBullets.filter(b => !b.dead && b.x>-50 && b.x<worldWidth+50);
-
-    // --- FALLING OBJECTS (LEVEL 3) ---
-    updateFallingObjects(now);
-
-    for(const obj of fallingObjects){
-      obj.y += obj.vy;
-      if(overlap(player,obj)){
-        lives--;
-        obj.dead = true;
-      }
-    }
-    fallingObjects = fallingObjects.filter(o => !o.dead && o.y<600);
-
-    // --- TOUCHING ENEMIES ---
-    for(const e of enemies){
-      if(overlap(player,e)) lives--;
-    }
-
-    // --- TOUCHING SPIKES ---
-    for(const s of spikes){
-      if(overlap(player,s)) lives--;
-    }
-
-    // --- PORTALS ---
-    for(const m of portals){
-      if(!m.solved && overlap(player,m)) openMathDialog(m);
-    }
-
-    if(lives <= 0) showGameOver();
-
-    // --- LEVEL COMPLETE ---
-    if(portals.length && portals.every(p => p.solved)){
-      gameRunning = false;
-      levelCompleteScreen.style.display = "flex";
-
-      // Unlock next level
-      if(currentLevel < unlockedLevels.length-1){
-        unlockedLevels[currentLevel+1] = true;
-        refreshLevelButtons();
-      }
-    }
-
-    // --- CAMERA ---
-    updateCamera();
-  }
-
-  // === DRAW PLAYER ===
-  function drawPixelCharacter(px,py){
-    const sx = px - cameraX;
-    const sy = py;
-
-    ctx.fillStyle="#ffcc99";
-    ctx.fillRect(sx+8,sy,10,10);
-
-    ctx.fillStyle="#000";
-    ctx.fillRect(sx+11,sy+3,2,2);
-
-    ctx.fillStyle="#ff0000";
-    ctx.fillRect(sx+6,sy+10,14,12);
-
-    ctx.fillStyle="#000";
-    ctx.fillRect(sx+6,sy+22,6,10);
-    ctx.fillRect(sx+14,sy+22,6,10);
-
-    ctx.fillStyle="#444";
-    if (player.facing === 1) {
-      ctx.fillRect(sx+20,sy+12,10,4);
-    } else {
-      ctx.fillRect(sx-4,sy+12,10,4);
-    }
-  }
-
-  // === PARALLAX BACKGROUND ===
-  function drawBackground(){
-    ctx.fillStyle="#6ec6ff";
-    ctx.fillRect(0,0,canvas.width,canvas.height);
-
-    // Hills (slow parallax)
-    ctx.fillStyle="#5aa85a";
-    const hillOffset = -cameraX * 0.2;
-    for(let i=-1;i<6;i++){
-      const hx = hillOffset + i*400;
-      ctx.beginPath();
-      ctx.arc(hx,480,180,Math.PI,0);
-      ctx.fill();
-    }
-
-    // Clouds (very slow parallax)
-    ctx.fillStyle="rgba(255,255,255,0.9)";
-    const cloudOffset = -cameraX * 0.1;
-    for(let i=-1;i<8;i++){
-      const cx = cloudOffset + i*300;
-      const cy = 80 + (i%3)*30;
-      ctx.beginPath();
-      ctx.ellipse(cx,cy,40,20,0,0,Math.PI*2);
-      ctx.ellipse(cx+30,cy+5,35,18,0,0,Math.PI*2);
-      ctx.ellipse(cx-30,cy+5,35,18,0,0,Math.PI*2);
-      ctx.fill();
-    }
-  }
-
-  // === DRAW LOOP ===
-  function draw(){
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-
-    drawBackground();
-
-    // Platforms
-    for(const p of platforms){
-      const sx = p.x - cameraX;
-      ctx.fillStyle="#8b5a2b";
-      ctx.fillRect(sx,p.y,p.w,p.h);
-      ctx.fillStyle="#3f8f3f";
-      ctx.fillRect(sx,p.y-6,p.w,8);
-    }
-
-    // Spikes
-    for(const s of spikes){
-      const sx = s.x - cameraX;
-      ctx.fillStyle="#ccc";
-      for(let i=0;i<s.w;i+=10){
-        ctx.beginPath();
-        ctx.moveTo(sx+i, s.y+s.h);
-        ctx.lineTo(sx+i+5, s.y);
-        ctx.lineTo(sx+i+10, s.y+s.h);
-        ctx.fill();
-      }
-    }
-
-    // Enemies
-    for(const e of enemies){
-      const sx = e.x - cameraX;
-      ctx.fillStyle =
-        e.type==="movingShooter" ? "#ff00ff" :
-        e.type==="shooter" ? "#ff8800" :
-        "#e74c3c";
-      ctx.fillRect(sx,e.y,e.w,e.h);
-    }
-
-    // Portals
-    for(const m of portals){
-      const sx = m.x - cameraX;
-      ctx.strokeStyle = m.solved ? "#4cd964" : "#4ec0ff";
-      ctx.lineWidth = 3;
-      ctx.strokeRect(sx,m.y,m.w,m.h);
-    }
-
-    // Player bullets
-    for(const b of bullets){
-      const sx = b.x - cameraX;
-      ctx.fillStyle="yellow";
-      ctx.beginPath();
-      ctx.arc(sx,b.y,b.r,0,Math.PI*2);
-      ctx.fill();
-    }
-
-    // Enemy bullets
-    for(const eb of enemyBullets){
-      const sx = eb.x - cameraX;
-      ctx.fillStyle="orange";
-      ctx.beginPath();
-      ctx.arc(sx,eb.y,eb.r,0,Math.PI*2);
-      ctx.fill();
-    }
-
-    // Falling objects
-    for(const o of fallingObjects){
-      const sx = o.x - cameraX;
-      ctx.fillStyle="#555";
-      ctx.fillRect(sx,o.y,o.w,o.h);
-    }
-
-    drawPixelCharacter(player.x,player.y);
-  }
-
-  // === GAME LOOP ===
-  function loop(){
-    update();
-    draw();
-    requestAnimationFrame(loop);
-  }
-
-  // === START GAME ===
-  loadLevel(0);
-  loop();
-
-}; // END window.onload
-</script>
-
-</body>
-</html>
+  portals: [
+    {x:2600, y:320, w:60, h:60, solved:false}
+  ]
+};
