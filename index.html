@@ -188,864 +188,752 @@
       });
     }
     refreshLevelButtons();
-  </script>
-<script>
 
-  /* === INPUT === */
-  const keys = { left:false, right:false, up:false };
+    /* === INPUT === */
+    const keys = { left:false, right:false, up:false };
 
-  window.addEventListener("keydown", e => {
-    if (e.code === "ArrowLeft" || e.code === "KeyA") keys.left = true;
-    if (e.code === "ArrowRight" || e.code === "KeyD") keys.right = true;
-    if (e.code === "ArrowUp" || e.code === "Space" || e.code === "KeyW") keys.up = true;
-  });
-
-  window.addEventListener("keyup", e => {
-    if (e.code === "ArrowLeft" || e.code === "KeyA") keys.left = false;
-    if (e.code === "ArrowRight" || e.code === "KeyD") keys.right = false;
-    if (e.code === "ArrowUp" || e.code === "Space" || e.code === "KeyW") keys.up = false;
-  });
-
-  /* === CANVAS === */
-  const canvas = document.getElementById("game");
-  const ctx = canvas.getContext("2d");
-
-  /* === GAME STATE === */
-  let currentLevelIndex = -1;
-  let player = null;
-  let cameraX = 0;
-  let gravity = 0.6;
-  let friction = 0.8;
-  let lives = 3;
-  let running = false;
-
-  let projectiles = [];
-  let enemyProjectiles = [];
-
-  const hudLevel = document.getElementById("hudLevel");
-  const hudLives = document.getElementById("hudLives");
-  const hudInfo = document.getElementById("hudInfo");
-
-  const startScreen = document.getElementById("startScreen");
-  const gameContainer = document.getElementById("gameContainer");
-  const hud = document.getElementById("hud");
-
-  /* === PLAYER === */
-  function resetPlayer() {
-    player = {
-      x: 100,
-      y: 400,
-      w: 40,
-      h: 50,
-      vx: 0,
-      vy: 0,
-      onGround: false
-    };
-    cameraX = 0;
-  }
-
-  function rectsOverlap(a, b) {
-    return a.x < b.x + b.w &&
-           a.x + a.w > b.x &&
-           a.y < b.y + b.h &&
-           a.y + a.h > b.y;
-  }
-
-  function killPlayer() {
-    lives--;
-    hudLives.textContent = "Liv: " + lives;
-
-    if (lives <= 0) {
-      lives = 3;
-      hudLives.textContent = "Liv: 3";
-      running = false;
-      gameContainer.style.display = "none";
-      hud.style.display = "none";
-      startScreen.style.display = "block";
-      return;
-    }
-
-    resetPlayer();
-  }
-
-  /* === PLAYER UPDATE === */
-  function updatePlayer(level) {
-    const speed = 3;
-
-    if (keys.left) player.vx = -speed;
-    else if (keys.right) player.vx = speed;
-    else player.vx *= friction;
-
-    if (keys.up && player.onGround) {
-      player.vy = -11;
-      player.onGround = false;
-    }
-
-    player.vy += gravity;
-
-    player.x += player.vx;
-    player.y += player.vy;
-
-    player.onGround = false;
-
-    /* === PLATFORM COLLISION === */
-    for (const p of level.platforms) {
-      const prevX = player.x - player.vx;
-      const prevY = player.y - player.vy;
-
-      const pr = {x: player.x, y: player.y, w: player.w, h: player.h};
-      const pl = {x: p.x, y: p.y, w: p.w, h: p.h};
-
-      if (rectsOverlap(pr, pl)) {
-        if (prevY + player.h <= p.y) {
-          player.y = p.y - player.h;
-          player.vy = 0;
-          player.onGround = true;
-        } else if (prevY >= p.y + p.h) {
-          player.y = p.y + p.h;
-          player.vy = 0;
-        } else if (prevX + player.w <= p.x) {
-          player.x = p.x - player.w;
-          player.vx = 0;
-        } else if (prevX >= p.x + p.w) {
-          player.x = p.x + p.w;
-          player.vx = 0;
-        }
-      }
-    }
-
-    if (player.y > canvas.height + 200) killPlayer();
-
-    cameraX = player.x - canvas.width / 2;
-    if (cameraX < 0) cameraX = 0;
-  }
-
-  /* === SHOOTING === */
-  window.addEventListener("click", () => {
-    if (!running) return;
-
-    const dir = keys.left ? -1 : 1;
-
-    projectiles.push({
-      x: player.x + player.w/2,
-      y: player.y + player.h/2,
-      w: 8,
-      h: 8,
-      vx: 7 * dir,
-      vy: 0
+    window.addEventListener("keydown", e => {
+      if (e.code === "ArrowLeft" || e.code === "KeyA") keys.left = true;
+      if (e.code === "ArrowRight" || e.code === "KeyD") keys.right = true;
+      if (e.code === "ArrowUp" || e.code === "Space" || e.code === "KeyW") keys.up = true;
     });
-  });
 
-</script>
-<script>
+    window.addEventListener("keyup", e => {
+      if (e.code === "ArrowLeft" || e.code === "KeyA") keys.left = false;
+      if (e.code === "ArrowRight" || e.code === "KeyD") keys.right = false;
+      if (e.code === "ArrowUp" || e.code === "Space" || e.code === "KeyW") keys.up = false;
+    });
 
-  /* === ENEMY AI === */
-  function updateEnemies(level, dt) {
-    for (const e of level.enemies) {
+    /* === CANVAS === */
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
 
-      /* === MOVING SHOOTER === */
-      if (e.type === "movingShooter") {
-        if (!e.dir) e.dir = 1;
-        if (!e.startX) e.startX = e.x;
+    /* === GAME STATE === */
+    let currentLevelIndex = -1;
+    let player = null;
+    let cameraX = 0;
+    let gravity = 0.6;
+    let friction = 0.8;
+    let lives = 3;
+    let running = false;
 
-        e.x += e.speed * e.dir;
+    let projectiles = [];
+    let enemyProjectiles = [];
 
-        if (e.x > e.startX + e.range) e.dir = -1;
-        if (e.x < e.startX - e.range) e.dir = 1;
-      }
+    const hudLevel = document.getElementById("hudLevel");
+    const hudLives = document.getElementById("hudLives");
+    const hudInfo = document.getElementById("hudInfo");
 
-      /* === BOSS MOVEMENT === */
-      if (e.type === "boss") {
-        if (!e.dir) e.dir = 1;
-        if (!e.startX) e.startX = e.x;
+    const startScreen = document.getElementById("startScreen");
+    const gameContainer = document.getElementById("gameContainer");
+    const hud = document.getElementById("hud");
 
-        e.x += e.speed * e.dir;
-
-        if (e.x > e.startX + 200) e.dir = -1;
-        if (e.x < e.startX - 200) e.dir = 1;
-      }
-
-      /* === SHOOTING === */
-      let shootInterval = e.shootSpeed || 1500;
-
-      if (e.type === "boss") {
-        if (e.hp <= 3 && e.ultraShootSpeed) shootInterval = e.ultraShootSpeed;
-        else if (e.hp <= 6 && e.enragedShootSpeed) shootInterval = e.enragedShootSpeed;
-      }
-
-      if (e.type === "shooter" || e.type === "movingShooter" || e.type === "boss") {
-        if (!e.lastShot) e.lastShot = 0;
-        e.lastShot += dt;
-
-        const dx = (player.x + player.w/2) - (e.x + e.w/2);
-        const dy = (player.y + player.h/2) - (e.y + e.h/2);
-        const dist = Math.hypot(dx, dy);
-
-        const inRange = !e.range || dist < e.range;
-
-        if (e.lastShot > shootInterval && inRange) {
-          e.lastShot = 0;
-
-          const speed = 4;
-          const vx = (dx / dist) * speed;
-          const vy = (dy / dist) * speed;
-
-          enemyProjectiles.push({
-            x: e.x + e.w/2,
-            y: e.y + e.h/2,
-            w: 8,
-            h: 8,
-            vx,
-            vy
-          });
-        }
-      }
-    }
-  }
-
-  /* === FALLING OBJECTS === */
-  function updateFallingObjects(level) {
-    for (const f of level.fallingObjects || []) {
-      f.y += f.speed;
-      if (f.y > canvas.height + 200) {
-        f.y = -50;
-      }
-    }
-  }
-
-  /* === PROJECTILES === */
-  function updateProjectiles(level) {
-
-    /* === PLAYER BULLETS === */
-    for (const p of projectiles) {
-      p.x += p.vx;
-      p.y += p.vy;
+    /* === PLAYER === */
+    function resetPlayer() {
+      player = {
+        x: 100,
+        y: 400,
+        w: 40,
+        h: 50,
+        vx: 0,
+        vy: 0,
+        onGround: false
+      };
+      cameraX = 0;
     }
 
-    projectiles = projectiles.filter(p =>
-      p.x > cameraX - 100 &&
-      p.x < cameraX + canvas.width + 100 &&
-      p.y > -100 &&
-      p.y < canvas.height + 100
-    );
-
-    /* === ENEMY BULLETS === */
-    for (const p of enemyProjectiles) {
-      p.x += p.vx;
-      p.y += p.vy;
+    function rectsOverlap(a, b) {
+      return a.x < b.x + b.w &&
+             a.x + a.w > b.x &&
+             a.y < b.y + b.h &&
+             a.y + a.h > b.y;
     }
 
-    enemyProjectiles = enemyProjectiles.filter(p =>
-      p.x > cameraX - 100 &&
-      p.x < cameraX + canvas.width + 100 &&
-      p.y > -100 &&
-      p.y < canvas.height + 100
-    );
+    function killPlayer() {
+      lives--;
+      hudLives.textContent = "Liv: " + lives;
 
-    /* === PLAYER HIT BY ENEMY BULLET === */
-    for (const p of enemyProjectiles) {
-      if (rectsOverlap(player, p)) {
-        killPlayer();
+      if (lives <= 0) {
+        lives = 3;
+        hudLives.textContent = "Liv: 3";
+        running = false;
+        gameContainer.style.display = "none";
+        hud.style.display = "none";
+        startScreen.style.display = "block";
         return;
       }
+
+      resetPlayer();
     }
 
-    /* === PLAYER BULLETS HIT ENEMIES === */
-    for (const b of projectiles) {
-      for (const e of level.enemies) {
-        if (rectsOverlap(b, e)) {
-          b.dead = true;
+    /* === PLAYER UPDATE === */
+    function updatePlayer(level) {
+      const speed = 3;
 
-          if (e.type === "boss") {
-            e.hp--;
-            if (e.hp <= 0) e.dead = true;
-          } else {
-            e.dead = true;
+      if (keys.left) player.vx = -speed;
+      else if (keys.right) player.vx = speed;
+      else player.vx *= friction;
+
+      if (keys.up && player.onGround) {
+        player.vy = -11;
+        player.onGround = false;
+      }
+
+      player.vy += gravity;
+
+      player.x += player.vx;
+      player.y += player.vy;
+
+      player.onGround = false;
+
+      /* PLATFORM COLLISION */
+      for (const p of level.platforms) {
+        const prevX = player.x - player.vx;
+        const prevY = player.y - player.vy;
+
+        const pr = {x: player.x, y: player.y, w: player.w, h: player.h};
+        const pl = {x: p.x, y: p.y, w: p.w, h: p.h};
+
+        if (rectsOverlap(pr, pl)) {
+          if (prevY + player.h <= p.y) {
+            player.y = p.y - player.h;
+            player.vy = 0;
+            player.onGround = true;
+          } else if (prevY >= p.y + p.h) {
+            player.y = p.y + p.h;
+            player.vy = 0;
+          } else if (prevX + player.w <= p.x) {
+            player.x = p.x - player.w;
+            player.vx = 0;
+          } else if (prevX >= p.x + p.w) {
+            player.x = p.x + p.w;
+            player.vx = 0;
+          }
+        }
+      }
+
+      if (player.y > canvas.height + 200) killPlayer();
+
+      cameraX = player.x - canvas.width / 2;
+      if (cameraX < 0) cameraX = 0;
+    }
+
+    /* === SHOOTING === */
+    window.addEventListener("click", () => {
+      if (!running) return;
+
+      const dir = keys.left ? -1 : 1;
+
+      projectiles.push({
+        x: player.x + player.w/2,
+        y: player.y + player.h/2,
+        w: 8,
+        h: 8,
+        vx: 7 * dir,
+        vy: 0
+      });
+    });
+
+    /* === ENEMY AI === */
+    function updateEnemies(level, dt) {
+      for (const e of level.enemies) {
+
+        if (e.type === "movingShooter") {
+          if (!e.dir) e.dir = 1;
+          if (!e.startX) e.startX = e.x;
+
+          e.x += e.speed * e.dir;
+
+          if (e.x > e.startX + e.range) e.dir = -1;
+          if (e.x < e.startX - e.range) e.dir = 1;
+        }
+
+        if (e.type === "boss") {
+          if (!e.dir) e.dir = 1;
+          if (!e.startX) e.startX = e.x;
+
+          e.x += e.speed * e.dir;
+
+          if (e.x > e.startX + 200) e.dir = -1;
+          if (e.x < e.startX - 200) e.dir = 1;
+        }
+
+        let shootInterval = e.shootSpeed || 1500;
+
+        if (e.type === "boss") {
+          if (e.hp <= 3 && e.ultraShootSpeed) shootInterval = e.ultraShootSpeed;
+          else if (e.hp <= 6 && e.enragedShootSpeed) shootInterval = e.enragedShootSpeed;
+        }
+
+        if (e.type === "shooter" || e.type === "movingShooter" || e.type === "boss") {
+          if (!e.lastShot) e.lastShot = 0;
+          e.lastShot += dt;
+
+          const dx = (player.x + player.w/2) - (e.x + e.w/2);
+          const dy = (player.y + player.h/2) - (e.y + e.h/2);
+          const dist = Math.hypot(dx, dy);
+
+          const inRange = !e.range || dist < e.range;
+
+          if (e.lastShot > shootInterval && inRange) {
+            e.lastShot = 0;
+
+            const speed = 4;
+            const vx = (dx / dist) * speed;
+            const vy = (dy / dist) * speed;
+
+            enemyProjectiles.push({
+              x: e.x + e.w/2,
+              y: e.y + e.h/2,
+              w: 8,
+              h: 8,
+              vx,
+              vy
+            });
           }
         }
       }
     }
 
-    projectiles = projectiles.filter(b => !b.dead);
-    level.enemies = level.enemies.filter(e => !e.dead);
-  }
-
-  /* === HAZARDS (SPIKES + FALLING OBJECTS) === */
-  function checkHazards(level) {
-    for (const s of level.spikes || []) {
-      if (rectsOverlap(player, s)) {
-        killPlayer();
-        return;
+    /* === FALLING OBJECTS === */
+    function updateFallingObjects(level) {
+      for (const f of level.fallingObjects || []) {
+        f.y += f.speed;
+        if (f.y > canvas.height + 200) {
+          f.y = -50;
+        }
       }
     }
 
-    for (const f of level.fallingObjects || []) {
-      if (rectsOverlap(player, f)) {
-        killPlayer();
-        return;
+    /* === PROJECTILES === */
+    function updateProjectiles(level) {
+
+      for (const p of projectiles) {
+        p.x += p.vx;
+        p.y += p.vy;
+      }
+
+      projectiles = projectiles.filter(p =>
+        p.x > cameraX - 100 &&
+        p.x < cameraX + canvas.width + 100 &&
+        p.y > -100 &&
+        p.y < canvas.height + 100
+      );
+
+      for (const p of enemyProjectiles) {
+        p.x += p.vx;
+        p.y += p.vy;
+      }
+
+      enemyProjectiles = enemyProjectiles.filter(p =>
+        p.x > cameraX - 100 &&
+        p.x < cameraX + canvas.width + 100 &&
+        p.y > -100 &&
+        p.y < canvas.height + 100
+      );
+
+      for (const p of enemyProjectiles) {
+        if (rectsOverlap(player, p)) {
+          killPlayer();
+          return;
+        }
+      }
+
+      for (const b of projectiles) {
+        for (const e of level.enemies) {
+          if (rectsOverlap(b, e)) {
+            b.dead = true;
+
+            if (e.type === "boss") {
+              e.hp--;
+              if (e.hp <= 0) e.dead = true;
+            } else {
+              e.dead = true;
+            }
+          }
+        }
+      }
+
+      projectiles = projectiles.filter(b => !b.dead);
+      level.enemies = level.enemies.filter(e => !e.dead);
+    }
+
+    /* === HAZARDS === */
+    function checkHazards(level) {
+      for (const s of level.spikes || []) {
+        if (rectsOverlap(player, s)) {
+          killPlayer();
+          return;
+        }
+      }
+
+      for (const f of level.fallingObjects || []) {
+        if (rectsOverlap(player, f)) {
+          killPlayer();
+          return;
+        }
       }
     }
-  }
 
-  /* === PORTAL === */
-  function checkPortal(level) {
-    const portal = level.portals[0];
-    if (!portal) return;
+    /* === PORTAL === */
+    function checkPortal(level) {
+      const portal = level.portals[0];
+      if (!portal) return;
 
-    const bossAlive = level.enemies.some(e => e.type === "boss");
-    if (bossAlive) return;
+      const bossAlive = level.enemies.some(e => e.type === "boss");
+      if (bossAlive) return;
 
-    if (rectsOverlap(player, portal)) {
-      portal.solved = true;
-      unlockNextLevel();
-      running = false;
+      if (rectsOverlap(player, portal)) {
+        portal.solved = true;
+        unlockNextLevel();
+        running = false;
 
-      gameContainer.style.display = "none";
-      hud.style.display = "none";
-      startScreen.style.display = "block";
-    }
-  }
-
-  /* === DRAW EVERYTHING === */
-  function drawLevel(level) {
-    ctx.save();
-    ctx.translate(-cameraX, 0);
-
-    /* PLATFORMS */
-    ctx.fillStyle = "#654321";
-    for (const p of level.platforms) ctx.fillRect(p.x, p.y, p.w, p.h);
-
-    /* SPIKES */
-    ctx.fillStyle = "#ff4444";
-    for (const s of level.spikes || []) ctx.fillRect(s.x, s.y, s.w, s.h);
-
-    /* FALLING OBJECTS */
-    ctx.fillStyle = "#cccccc";
-    for (const f of level.fallingObjects || []) ctx.fillRect(f.x, f.y, f.w, f.h);
-
-    /* ENEMIES */
-    for (const e of level.enemies) {
-      if (e.type === "normal") ctx.fillStyle = "#e67e22";
-      else if (e.type === "shooter") ctx.fillStyle = "#9b59b6";
-      else if (e.type === "movingShooter") ctx.fillStyle = "#f1c40f";
-      else if (e.type === "boss") ctx.fillStyle = "#e74c3c";
-
-      ctx.fillRect(e.x, e.y, e.w, e.h);
-
-      if (e.type === "boss") {
-        ctx.fillStyle = "black";
-        ctx.fillRect(e.x, e.y - 10, e.w, 6);
-
-        ctx.fillStyle = "#2ecc71";
-        const ratio = e.hp / 12;
-        ctx.fillRect(e.x, e.y - 10, e.w * ratio, 6);
+        gameContainer.style.display = "none";
+        hud.style.display = "none";
+        startScreen.style.display = "block";
       }
     }
 
-    /* PORTAL */
-    const portal = level.portals[0];
-    if (portal) {
-      ctx.fillStyle = portal.solved ? "#2ecc71" : "#3498db";
-      ctx.fillRect(portal.x, portal.y, portal.w, portal.h);
+    /* === DRAW === */
+    function drawLevel(level) {
+      ctx.save();
+      ctx.translate(-cameraX, 0);
+
+      ctx.fillStyle = "#654321";
+      for (const p of level.platforms) ctx.fillRect(p.x, p.y, p.w, p.h);
+
+      ctx.fillStyle = "#ff4444";
+      for (const s of level.spikes || []) ctx.fillRect(s.x, s.y, s.w, s.h);
+
+      ctx.fillStyle = "#cccccc";
+      for (const f of level.fallingObjects || []) ctx.fillRect(f.x, f.y, f.w, f.h);
+
+      for (const e of level.enemies) {
+        if (e.type === "normal") ctx.fillStyle = "#e67e22";
+        else if (e.type === "shooter") ctx.fillStyle = "#9b59b6";
+        else if (e.type === "movingShooter") ctx.fillStyle = "#f1c40f";
+        else if (e.type === "boss") ctx.fillStyle = "#e74c3c";
+
+        ctx.fillRect(e.x, e.y, e.w, e.h);
+
+        if (e.type === "boss") {
+          ctx.fillStyle = "black";
+          ctx.fillRect(e.x, e.y - 10, e.w, 6);
+
+          ctx.fillStyle = "#2ecc71";
+          const ratio = e.hp / 12;
+          ctx.fillRect(e.x, e.y - 10, e.w * ratio, 6);
+        }
+      }
+
+      const portal = level.portals[0];
+      if (portal) {
+        ctx.fillStyle = portal.solved ? "#2ecc71" : "#3498db";
+        ctx.fillRect(portal.x, portal.y, portal.w, portal.h);
+      }
+
+      ctx.fillStyle = "white";
+      ctx.fillRect(player.x, player.y, player.w, player.h);
+
+      ctx.fillStyle = "yellow";
+      for (const p of projectiles) ctx.fillRect(p.x, p.y, p.w, p.h);
+
+      ctx.fillStyle = "red";
+      for (const p of enemyProjectiles) ctx.fillRect(p.x, p.y, p.w, p.h);
+
+      ctx.restore();
     }
 
-    /* PLAYER */
-    ctx.fillStyle = "white";
-    ctx.fillRect(player.x, player.y, player.w, player.h);
-
-    /* PLAYER BULLETS */
-    ctx.fillStyle = "yellow";
-    for (const p of projectiles) ctx.fillRect(p.x, p.y, p.w, p.h);
-
-    /* ENEMY BULLETS */
-    ctx.fillStyle = "red";
-    for (const p of enemyProjectiles) ctx.fillRect(p.x, p.y, p.w, p.h);
-
-    ctx.restore();
-  }
-
-</script>
-/* ============================================
-   DEL D1 — LEVELS 1–4
-   ============================================ */
-
-const LEVELS = [];
-
-/* === LEVEL 1 — Intro === */
-LEVELS[0] = {
-  name: "Level 1 – Intro",
-  falling: false,
-
-  platforms: [
-    {x:0, y:480, w:600, h:60},
-    {x:650, y:420, w:250, h:20},
-    {x:950, y:380, w:250, h:20},
-    {x:1250, y:340, w:250, h:20},
-    {x:1550, y:300, w:250, h:20},
-    {x:1850, y:340, w:250, h:20},
-    {x:2150, y:380, w:250, h:20},
-    {x:2450, y:360, w:250, h:20},
-    {x:2750, y:330, w:250, h:20},
-    {x:3050, y:300, w:250, h:20},
-    {x:3350, y:340, w:250, h:20},
-    {x:3650, y:380, w:250, h:20}
-  ],
-
-  enemies: [],
-  spikes: [],
-  fallingObjects: [],
-
-  portals: [
-    {x:3900, y:340, w:40, h:40, solved:false}
-  ]
-};
-
-
-/* === LEVEL 2 — Fjender + Spikes === */
-LEVELS[1] = {
-  name: "Level 2 – Fjender & Spikes",
-  falling: false,
-
-  platforms: [
-    {x:0, y:480, w:600, h:60},
-    {x:650, y:420, w:250, h:20},
-    {x:950, y:380, w:250, h:20},
-    {x:1250, y:340, w:250, h:20},
-    {x:1550, y:300, w:250, h:20},
-    {x:1850, y:340, w:250, h:20},
-    {x:2150, y:380, w:250, h:20},
-    {x:2450, y:360, w:250, h:20},
-    {x:2750, y:330, w:250, h:20},
-    {x:3050, y:300, w:250, h:20},
-    {x:3350, y:340, w:250, h:20},
-    {x:3650, y:380, w:250, h:20}
-  ],
-
-  enemies: [
-    {x:900, y:350, w:40, h:40, type:"normal"},
-    {x:2100, y:350, w:40, h:40, type:"normal"}
-  ],
-
-  spikes: [
-    {x:1400, y:480, w:120, h:40},
-    {x:3000, y:480, w:120, h:40}
-  ],
-
-  fallingObjects: [],
-
-  portals: [
-    {x:3900, y:340, w:40, h:40, solved:false}
-  ]
-};
-
-
-/* === LEVEL 3 — Skydefjender === */
-LEVELS[2] = {
-  name: "Level 3 – Skydefjender",
-  falling: false,
-
-  platforms: [
-    {x:0, y:480, w:600, h:60},
-    {x:650, y:420, w:250, h:20},
-    {x:950, y:380, w:250, h:20},
-    {x:1250, y:340, w:250, h:20},
-    {x:1550, y:300, w:250, h:20},
-    {x:1850, y:340, w:250, h:20},
-    {x:2150, y:380, w:250, h:20},
-    {x:2450, y:360, w:250, h:20},
-    {x:2750, y:330, w:250, h:20},
-    {x:3050, y:300, w:250, h:20},
-    {x:3350, y:340, w:250, h:20},
-    {x:3650, y:380, w:250, h:20}
-  ],
-
-  enemies: [
-    {x:1100, y:350, w:40, h:40, type:"shooter", shootSpeed:1500, range:300},
-    {x:2300, y:350, w:40, h:40, type:"shooter", shootSpeed:1500, range:300},
-    {x:1700, y:350, w:40, h:40, type:"normal"}
-  ],
-
-  spikes: [
-    {x:1400, y:480, w:120, h:40},
-    {x:3000, y:480, w:120, h:40}
-  ],
-
-  fallingObjects: [],
-
-  portals: [
-    {x:3900, y:340, w:40, h:40, solved:false}
-  ]
-};
-
-
-/* === LEVEL 4 — Faldende ting === */
-LEVELS[3] = {
-  name: "Level 4 – Faldende ting",
-  falling: true,
-
-  platforms: [
-    {x:0, y:480, w:600, h:60},
-    {x:650, y:420, w:250, h:20},
-    {x:950, y:380, w:250, h:20},
-    {x:1250, y:340, w:250, h:20},
-    {x:1550, y:300, w:250, h:20},
-    {x:1850, y:340, w:250, h:20},
-    {x:2150, y:380, w:250, h:20},
-    {x:2450, y:360, w:250, h:20},
-    {x:2750, y:330, w:250, h:20},
-    {x:3050, y:300, w:250, h:20},
-    {x:3350, y:340, w:250, h:20},
-    {x:3650, y:380, w:250, h:20}
-  ],
-
-  enemies: [
-    {x:1200, y:350, w:40, h:40, type:"shooter", shootSpeed:1500, range:300},
-    {x:2000, y:350, w:40, h:40, type:"normal"},
-    {x:2600, y:350, w:40, h:40, type:"normal"}
-  ],
-
-  spikes: [
-    {x:1400, y:480, w:120, h:40},
-    {x:3100, y:480, w:120, h:40}
-  ],
-
-  fallingObjects: [
-    {x:1700, y:0, w:40, h:40, speed:4},
-    {x:2900, y:0, w:40, h:40, speed:5}
-  ],
-
-  portals: [
-    {x:3900, y:340, w:40, h:40, solved:false}
-  ]
-};
-/* ============================================
-   DEL D2 — LEVELS 5–8
-   ============================================ */
-
-
-/* === LEVEL 5 — Moving Shooters === */
-LEVELS[4] = {
-  name: "Level 5 – Moving Shooters",
-  falling: false,
-
-  platforms: [
-    {x:0, y:480, w:600, h:60},
-    {x:650, y:420, w:250, h:20},
-    {x:950, y:380, w:250, h:20},
-    {x:1250, y:340, w:250, h:20},
-    {x:1550, y:300, w:250, h:20},
-    {x:1850, y:340, w:250, h:20},
-    {x:2150, y:380, w:250, h:20},
-    {x:2450, y:360, w:250, h:20},
-    {x:2750, y:330, w:250, h:20},
-    {x:3050, y:300, w:250, h:20},
-    {x:3350, y:340, w:250, h:20},
-    {x:3650, y:380, w:250, h:20}
-  ],
-
-  enemies: [
-    {x:1100, y:350, w:40, h:40, type:"movingShooter", range:200, speed:1.5, shootSpeed:1500},
-    {x:2000, y:350, w:40, h:40, type:"movingShooter", range:250, speed:1.8, shootSpeed:1400},
-    {x:2600, y:350, w:40, h:40, type:"normal"}
-  ],
-
-  spikes: [
-    {x:1400, y:480, w:150, h:40},
-    {x:3100, y:480, w:150, h:40}
-  ],
-
-  fallingObjects: [],
-
-  portals: [
-    {x:3900, y:340, w:40, h:40, solved:false}
-  ]
-};
-
-
-
-/* === LEVEL 6 — Kaos Kombineret === */
-LEVELS[5] = {
-  name: "Level 6 – Kaos Kombineret",
-  falling: true,
-
-  platforms: [
-    {x:0, y:480, w:600, h:60},
-    {x:650, y:420, w:250, h:20},
-    {x:950, y:380, w:250, h:20},
-    {x:1250, y:340, w:250, h:20},
-    {x:1550, y:300, w:250, h:20},
-    {x:1850, y:340, w:250, h:20},
-    {x:2150, y:380, w:250, h:20},
-    {x:2450, y:360, w:250, h:20},
-    {x:2750, y:330, w:250, h:20},
-    {x:3050, y:300, w:250, h:20},
-    {x:3350, y:340, w:250, h:20},
-    {x:3650, y:380, w:250, h:20}
-  ],
-
-  enemies: [
-    {x:900, y:350, w:40, h:40, type:"shooter", shootSpeed:1500, range:300},
-    {x:1500, y:350, w:40, h:40, type:"movingShooter", range:200, speed:1.6, shootSpeed:1400},
-    {x:2400, y:350, w:40, h:40, type:"movingShooter", range:250, speed:1.8, shootSpeed:1300},
-    {x:3100, y:350, w:40, h:40, type:"normal"}
-  ],
-
-  spikes: [
-    {x:1300, y:480, w:150, h:40},
-    {x:2900, y:480, w:150, h:40}
-  ],
-
-  fallingObjects: [
-    {x:1700, y:0, w:40, h:40, speed:4},
-    {x:2000, y:0, w:40, h:40, speed:5},
-    {x:3200, y:0, w:40, h:40, speed:6}
-  ],
-
-  portals: [
-    {x:3900, y:340, w:40, h:40, solved:false}
-  ]
-};
-
-
-
-/* === LEVEL 7 — Intens Platforming === */
-LEVELS[6] = {
-  name: "Level 7 – Intens Platforming",
-  falling: true,
-
-  platforms: [
-    {x:0, y:480, w:600, h:60},
-    {x:650, y:420, w:250, h:20},
-    {x:950, y:380, w:250, h:20},
-    {x:1250, y:340, w:250, h:20},
-    {x:1550, y:300, w:250, h:20},
-    {x:1850, y:340, w:250, h:20},
-    {x:2150, y:380, w:250, h:20},
-    {x:2450, y:360, w:250, h:20},
-    {x:2750, y:330, w:250, h:20},
-    {x:3050, y:300, w:250, h:20},
-    {x:3350, y:340, w:250, h:20},
-    {x:3650, y:380, w:250, h:20}
-  ],
-
-  enemies: [
-    {x:900, y:350, w:40, h:40, type:"movingShooter", range:250, speed:2.0, shootSpeed:1300},
-    {x:1600, y:350, w:40, h:40, type:"movingShooter", range:300, speed:2.2, shootSpeed:1200},
-    {x:2400, y:350, w:40, h:40, type:"shooter", shootSpeed:1200, range:300},
-    {x:3100, y:350, w:40, h:40, type:"normal"}
-  ],
-
-  spikes: [
-    {x:1300, y:480, w:150, h:40},
-    {x:2900, y:480, w:150, h:40},
-    {x:3500, y:480, w:150, h:40}
-  ],
-
-  fallingObjects: [
-    {x:1200, y:0, w:40, h:40, speed:5},
-    {x:1700, y:0, w:40, h:40, speed:6},
-    {x:2200, y:0, w:40, h:40, speed:7},
-    {x:3200, y:0, w:40, h:40, speed:6}
-  ],
-
-  portals: [
-    {x:3900, y:340, w:40, h:40, solved:false}
-  ]
-};
-
-
-
-/* === LEVEL 8 — Før Mini-Bossen === */
-LEVELS[7] = {
-  name: "Level 8 – Før Mini-Bossen",
-  falling: true,
-
-  platforms: [
-    {x:0, y:480, w:600, h:60},
-    {x:650, y:420, w:250, h:20},
-    {x:950, y:380, w:250, h:20},
-    {x:1250, y:340, w:250, h:20},
-    {x:1550, y:300, w:250, h:20},
-    {x:1850, y:340, w:250, h:20},
-    {x:2150, y:380, w:250, h:20},
-    {x:2450, y:360, w:250, h:20},
-    {x:2750, y:330, w:250, h:20},
-    {x:3050, y:300, w:250, h:20},
-    {x:3350, y:340, w:250, h:20},
-    {x:3650, y:380, w:250, h:20}
-  ],
-
-  enemies: [
-    {x:850, y:350, w:40, h:40, type:"movingShooter", range:250, speed:2.0, shootSpeed:1200},
-    {x:1400, y:350, w:40, h:40, type:"shooter", shootSpeed:1200, range:300},
-    {x:1900, y:350, w:40, h:40, type:"movingShooter", range:300, speed:2.3, shootSpeed:1100},
-    {x:2500, y:350, w:40, h:40, type:"shooter", shootSpeed:1100, range:300},
-    {x:3100, y:350, w:40, h:40, type:"normal"}
-  ],
-
-  spikes: [
-    {x:1200, y:480, w:150, h:40},
-    {x:2100, y:480, w:150, h:40},
-    {x:3300, y:480, w:150, h:40}
-  ],
-
-  fallingObjects: [
-    {x:1000, y:0, w:40, h:40, speed:5},
-    {x:1500, y:0, w:40, h:40, speed:6},
-    {x:1800, y:0, w:40, h:40, speed:7},
-    {x:2300, y:0, w:40, h:40, speed:6},
-    {x:2900, y:0, w:40, h:40, speed:7},
-    {x:3500, y:0, w:40, h:40, speed:8}
-  ],
-
-  portals: [
-    {x:3900, y:340, w:40, h:40, solved:false}
-  ]
-};
-/* ============================================
-   DEL D3 — LEVELS 9–10 + startLevel() + gameLoop()
-   ============================================ */
-
-
-/* === LEVEL 9 — MINI-BOSS (5 HP) === */
-LEVELS[8] = {
-  name: "Level 9 – Mini-Boss",
-  falling: false,
-
-  platforms: [
-    {x:0,    y:480, w:600, h:60},
-    {x:800,  y:420, w:600, h:40},
-    {x:1600, y:360, w:300, h:20},
-    {x:2100, y:360, w:300, h:20}
-  ],
-
-  enemies: [
-    {
-      x:1000, y:380, w:80, h:80,
-      type:"boss",
-      hp:5,
-      speed:1.2,
-      shootSpeed:1800,
-      range:300
+    /* === LEVELS === */
+    const LEVELS = [];
+
+    LEVELS[0] = {
+      name: "Level 1 – Intro",
+      falling: false,
+      platforms: [
+        {x:0, y:480, w:600, h:60},
+        {x:650, y:420, w:250, h:20},
+        {x:950, y:380, w:250, h:20},
+        {x:1250, y:340, w:250, h:20},
+        {x:1550, y:300, w:250, h:20},
+        {x:1850, y:340, w:250, h:20},
+        {x:2150, y:380, w:250, h:20},
+        {x:2450, y:360, w:250, h:20},
+        {x:2750, y:330, w:250, h:20},
+        {x:3050, y:300, w:250, h:20},
+        {x:3350, y:340, w:250, h:20},
+        {x:3650, y:380, w:250, h:20}
+      ],
+      enemies: [],
+      spikes: [],
+      fallingObjects: [],
+      portals: [
+        {x:3900, y:340, w:40, h:40, solved:false}
+      ]
+    };
+
+    LEVELS[1] = {
+      name: "Level 2 – Fjender & Spikes",
+      falling: false,
+      platforms: [
+        {x:0, y:480, w:600, h:60},
+        {x:650, y:420, w:250, h:20},
+        {x:950, y:380, w:250, h:20},
+        {x:1250, y:340, w:250, h:20},
+        {x:1550, y:300, w:250, h:20},
+        {x:1850, y:340, w:250, h:20},
+        {x:2150, y:380, w:250, h:20},
+        {x:2450, y:360, w:250, h:20},
+        {x:2750, y:330, w:250, h:20},
+        {x:3050, y:300, w:250, h:20},
+        {x:3350, y:340, w:250, h:20},
+        {x:3650, y:380, w:250, h:20}
+      ],
+      enemies: [
+        {x:900, y:350, w:40, h:40, type:"normal"},
+        {x:2100, y:350, w:40, h:40, type:"normal"}
+      ],
+      spikes: [
+        {x:1400, y:480, w:120, h:40},
+        {x:3000, y:480, w:120, h:40}
+      ],
+      fallingObjects: [],
+      portals: [
+        {x:3900, y:340, w:40, h:40, solved:false}
+      ]
+    };
+
+    LEVELS[2] = {
+      name: "Level 3 – Skydefjender",
+      falling: false,
+      platforms: [
+        {x:0, y:480, w:600, h:60},
+        {x:650, y:420, w:250, h:20},
+        {x:950, y:380, w:250, h:20},
+        {x:1250, y:340, w:250, h:20},
+        {x:1550, y:300, w:250, h:20},
+        {x:1850, y:340, w:250, h:20},
+        {x:2150, y:380, w:250, h:20},
+        {x:2450, y:360, w:250, h:20},
+        {x:2750, y:330, w:250, h:20},
+        {x:3050, y:300, w:250, h:20},
+        {x:3350, y:340, w:250, h:20},
+        {x:3650, y:380, w:250, h:20}
+      ],
+      enemies: [
+        {x:1100, y:350, w:40, h:40, type:"shooter", shootSpeed:1500, range:300},
+        {x:2300, y:350, w:40, h:40, type:"shooter", shootSpeed:1500, range:300},
+        {x:1700, y:350, w:40, h:40, type:"normal"}
+      ],
+      spikes: [
+        {x:1400, y:480, w:120, h:40},
+        {x:3000, y:480, w:120, h:40}
+      ],
+      fallingObjects: [],
+      portals: [
+        {x:3900, y:340, w:40, h:40, solved:false}
+      ]
+    };
+
+    LEVELS[3] = {
+      name: "Level 4 – Faldende ting",
+      falling: true,
+      platforms: [
+        {x:0, y:480, w:600, h:60},
+        {x:650, y:420, w:250, h:20},
+        {x:950, y:380, w:250, h:20},
+        {x:1250, y:340, w:250, h:20},
+        {x:1550, y:300, w:250, h:20},
+        {x:1850, y:340, w:250, h:20},
+        {x:2150, y:380, w:250, h:20},
+        {x:2450, y:360, w:250, h:20},
+        {x:2750, y:330, w:250, h:20},
+        {x:3050, y:300, w:250, h:20},
+        {x:3350, y:340, w:250, h:20},
+        {x:3650, y:380, w:250, h:20}
+      ],
+      enemies: [
+        {x:1200, y:350, w:40, h:40, type:"shooter", shootSpeed:1500, range:300},
+        {x:2000, y:350, w:40, h:40, type:"normal"},
+        {x:2600, y:350, w:40, h:40, type:"normal"}
+      ],
+      spikes: [
+        {x:1400, y:480, w:120, h:40},
+        {x:3100, y:480, w:120, h:40}
+      ],
+      fallingObjects: [
+        {x:1700, y:0, w:40, h:40, speed:4},
+        {x:2900, y:0, w:40, h:40, speed:5}
+      ],
+      portals: [
+        {x:3900, y:340, w:40, h:40, solved:false}
+      ]
+    };
+
+    LEVELS[4] = {
+      name: "Level 5 – Moving Shooters",
+      falling: false,
+      platforms: [
+        {x:0, y:480, w:600, h:60},
+        {x:650, y:420, w:250, h:20},
+        {x:950, y:380, w:250, h:20},
+        {x:1250, y:340, w:250, h:20},
+        {x:1550, y:300, w:250, h:20},
+        {x:1850, y:340, w:250, h:20},
+        {x:2150, y:380, w:250, h:20},
+        {x:2450, y:360, w:250, h:20},
+        {x:2750, y:330, w:250, h:20},
+        {x:3050, y:300, w:250, h:20},
+        {x:3350, y:340, w:250, h:20},
+        {x:3650, y:380, w:250, h:20}
+      ],
+      enemies: [
+        {x:1100, y:350, w:40, h:40, type:"movingShooter", range:200, speed:1.5, shootSpeed:1500},
+        {x:2000, y:350, w:40, h:40, type:"movingShooter", range:250, speed:1.8, shootSpeed:1400},
+        {x:2600, y:350, w:40, h:40, type:"normal"}
+      ],
+      spikes: [
+        {x:1400, y:480, w:150, h:40},
+        {x:3100, y:480, w:150, h:40}
+      ],
+      fallingObjects: [],
+      portals: [
+        {x:3900, y:340, w:40, h:40, solved:false}
+      ]
+    };
+
+    LEVELS[5] = {
+      name: "Level 6 – Kaos Kombineret",
+      falling: true,
+      platforms: [
+        {x:0, y:480, w:600, h:60},
+        {x:650, y:420, w:250, h:20},
+        {x:950, y:380, w:250, h:20},
+        {x:1250, y:340, w:250, h:20},
+        {x:1550, y:300, w:250, h:20},
+        {x:1850, y:340, w:250, h:20},
+        {x:2150, y:380, w:250, h:20},
+        {x:2450, y:360, w:250, h:20},
+        {x:2750, y:330, w:250, h:20},
+        {x:3050, y:300, w:250, h:20},
+        {x:3350, y:340, w:250, h:20},
+        {x:3650, y:380, w:250, h:20}
+      ],
+      enemies: [
+        {x:900, y:350, w:40, h:40, type:"shooter", shootSpeed:1500, range:300},
+        {x:1500, y:350, w:40, h:40, type:"movingShooter", range:200, speed:1.6, shootSpeed:1400},
+        {x:2400, y:350, w:40, h:40, type:"movingShooter", range:250, speed:1.8, shootSpeed:1300},
+        {x:3100, y:350, w:40, h:40, type:"normal"}
+      ],
+      spikes: [
+        {x:1300, y:480, w:150, h:40},
+        {x:2900, y:480, w:150, h:40}
+      ],
+      fallingObjects: [
+        {x:1700, y:0, w:40, h:40, speed:4},
+        {x:2000, y:0, w:40, h:40, speed:5},
+        {x:3200, y:0, w:40, h:40, speed:6}
+      ],
+      portals: [
+        {x:3900, y:340, w:40, h:40, solved:false}
+      ]
+    };
+
+    LEVELS[6] = {
+      name: "Level 7 – Intens Platforming",
+      falling: true,
+      platforms: [
+        {x:0, y:480, w:600, h:60},
+        {x:650, y:420, w:250, h:20},
+        {x:950, y:380, w:250, h:20},
+        {x:1250, y:340, w:250, h:20},
+        {x:1550, y:300, w:250, h:20},
+        {x:1850, y:340, w:250, h:20},
+        {x:2150, y:380, w:250, h:20},
+        {x:2450, y:360, w:250, h:20},
+        {x:2750, y:330, w:250, h:20},
+        {x:3050, y:300, w:250, h:20},
+        {x:3350, y:340, w:250, h:20},
+        {x:3650, y:380, w:250, h:20}
+      ],
+      enemies: [
+        {x:900, y:350, w:40, h:40, type:"movingShooter", range:250, speed:2.0, shootSpeed:1300},
+        {x:1600, y:350, w:40, h:40, type:"movingShooter", range:300, speed:2.2, shootSpeed:1200},
+        {x:2400, y:350, w:40, h:40, type:"shooter", shootSpeed:1200, range:300},
+        {x:3100, y:350, w:40, h:40, type:"normal"}
+      ],
+      spikes: [
+        {x:1300, y:480, w:150, h:40},
+        {x:2900, y:480, w:150, h:40},
+        {x:3500, y:480, w:150, h:40}
+      ],
+      fallingObjects: [
+        {x:1200, y:0, w:40, h:40, speed:5},
+        {x:1700, y:0, w:40, h:40, speed:6},
+        {x:2200, y:0, w:40, h:40, speed:7},
+        {x:3200, y:0, w:40, h:40, speed:6}
+      ],
+      portals: [
+        {x:3900, y:340, w:40, h:40, solved:false}
+      ]
+    };
+
+    LEVELS[7] = {
+      name: "Level 8 – Før Mini-Bossen",
+      falling: true,
+      platforms: [
+        {x:0, y:480, w:600, h:60},
+        {x:650, y:420, w:250, h:20},
+        {x:950, y:380, w:250, h:20},
+        {x:1250, y:340, w:250, h:20},
+        {x:1550, y:300, w:250, h:20},
+        {x:1850, y:340, w:250, h:20},
+        {x:2150, y:380, w:250, h:20},
+        {x:2450, y:360, w:250, h:20},
+        {x:2750, y:330, w:250, h:20},
+        {x:3050, y:300, w:250, h:20},
+        {x:3350, y:340, w:250, h:20},
+        {x:3650, y:380, w:250, h:20}
+      ],
+      enemies: [
+        {x:850, y:350, w:40, h:40, type:"movingShooter", range:250, speed:2.0, shootSpeed:1200},
+        {x:1400, y:350, w:40, h:40, type:"shooter", shootSpeed:1200, range:300},
+        {x:1900, y:350, w:40, h:40, type:"movingShooter", range:300, speed:2.3, shootSpeed:1100},
+        {x:2500, y:350, w:40, h:40, type:"shooter", shootSpeed:1100, range:300},
+        {x:3100, y:350, w:40, h:40, type:"normal"}
+      ],
+      spikes: [
+        {x:1200, y:480, w:150, h:40},
+        {x:2100, y:480, w:150, h:40},
+        {x:3300, y:480, w:150, h:40}
+      ],
+      fallingObjects: [
+        {x:1000, y:0, w:40, h:40, speed:5},
+        {x:1500, y:0, w:40, h:40, speed:6},
+        {x:1800, y:0, w:40, h:40, speed:7},
+        {x:2300, y:0, w:40, h:40, speed:6},
+        {x:2900, y:0, w:40, h:40, speed:7},
+        {x:3500, y:0, w:40, h:40, speed:8}
+      ],
+      portals: [
+        {x:3900, y:340, w:40, h:40, solved:false}
+      ]
+    };
+
+    LEVELS[8] = {
+      name: "Level 9 – Mini-Boss",
+      falling: false,
+      platforms: [
+        {x:0,    y:480, w:600, h:60},
+        {x:800,  y:420, w:600, h:40},
+        {x:1600, y:360, w:300, h:20},
+        {x:2100, y:360, w:300, h:20}
+      ],
+      enemies: [
+        {
+          x:1000, y:380, w:80, h:80,
+          type:"boss",
+          hp:5,
+          speed:1.2,
+          shootSpeed:1800,
+          range:300
+        }
+      ],
+      spikes: [],
+      fallingObjects: [],
+      portals: [
+        {x:2600, y:320, w:50, h:50, solved:false}
+      ]
+    };
+
+    LEVELS[9] = {
+      name: "Level 10 – Stor Boss",
+      falling: false,
+      platforms: [
+        {x:0,    y:480, w:600, h:60},
+        {x:800,  y:420, w:600, h:40},
+        {x:1600, y:360, w:300, h:20},
+        {x:2100, y:360, w:300, h:20}
+      ],
+      enemies: [
+        {
+          x:1000, y:380, w:100, h:100,
+          type:"boss",
+          hp:12,
+          speed:1.4,
+          shootSpeed:1400,
+          enragedShootSpeed:900,
+          ultraShootSpeed:600,
+          range:350
+        }
+      ],
+      spikes: [],
+      fallingObjects: [],
+      portals: [
+        {x:2600, y:320, w:60, h:60, solved:false}
+      ]
+    };
+
+    /* === START LEVEL === */
+    function startLevel(index) {
+      currentLevelIndex = index;
+      resetPlayer();
+      projectiles = [];
+      enemyProjectiles = [];
+
+      hudLevel.textContent = "Level: " + (index + 1);
+      hudInfo.textContent = LEVELS[index].name;
+
+      startScreen.style.display = "none";
+      gameContainer.style.display = "block";
+      hud.style.display = "block";
+
+      running = true;
+      lastTime = performance.now();
+      requestAnimationFrame(gameLoop);
     }
-  ],
 
-  spikes: [],
-  fallingObjects: [],
-
-  portals: [
-    {x:2600, y:320, w:50, h:50, solved:false}
-  ]
-};
-
-
-
-/* === LEVEL 10 — STOR BOSS (12 HP) === */
-LEVELS[9] = {
-  name: "Level 10 – Stor Boss",
-  falling: false,
-
-  platforms: [
-    {x:0,    y:480, w:600, h:60},
-    {x:800,  y:420, w:600, h:40},
-    {x:1600, y:360, w:300, h:20},
-    {x:2100, y:360, w:300, h:20}
-  ],
-
-  enemies: [
-    {
-      x:1000, y:380, w:100, h:100,
-      type:"boss",
-      hp:12,
-      speed:1.4,
-      shootSpeed:1400,
-      enragedShootSpeed:900,
-      ultraShootSpeed:600,
-      range:350
+    /* === UNLOCK NEXT LEVEL === */
+    function unlockNextLevel() {
+      if (currentLevelIndex < LEVELS.length - 1) {
+        unlockedLevels[currentLevelIndex + 1] = true;
+        refreshLevelButtons();
+      }
     }
-  ],
 
-  spikes: [],
-  fallingObjects: [],
+    /* === GAME LOOP === */
+    let lastTime = 0;
 
-  portals: [
-    {x:2600, y:320, w:60, h:60, solved:false}
-  ]
-};
+    function gameLoop(timestamp) {
+      if (!running) return;
 
+      const dt = timestamp - lastTime;
+      lastTime = timestamp;
 
+      const level = LEVELS[currentLevelIndex];
 
-/* ============================================
-   START LEVEL
-   ============================================ */
-function startLevel(index) {
-  currentLevelIndex = index;
-  resetPlayer();
-  projectiles = [];
-  enemyProjectiles = [];
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  hudLevel.textContent = "Level: " + (index + 1);
-  hudInfo.textContent = LEVELS[index].name;
+      updatePlayer(level);
+      updateEnemies(level, dt);
+      updateFallingObjects(level);
+      updateProjectiles(level);
+      checkHazards(level);
+      checkPortal(level);
 
-  startScreen.style.display = "none";
-  gameContainer.style.display = "block";
-  hud.style.display = "block";
+      drawLevel(level);
 
-  running = true;
-  lastTime = performance.now();
-  requestAnimationFrame(gameLoop);
-}
+      requestAnimationFrame(gameLoop);
+    }
 
-
-
-/* ============================================
-   UNLOCK NEXT LEVEL
-   ============================================ */
-function unlockNextLevel() {
-  if (currentLevelIndex < LEVELS.length - 1) {
-    unlockedLevels[currentLevelIndex + 1] = true;
-    refreshLevelButtons();
-  }
-}
-
-
-
-/* ============================================
-   GAME LOOP
-   ============================================ */
-let lastTime = 0;
-
-function gameLoop(timestamp) {
-  if (!running) return;
-
-  const dt = timestamp - lastTime;
-  lastTime = timestamp;
-
-  const level = LEVELS[currentLevelIndex];
-
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  updatePlayer(level);
-  updateEnemies(level, dt);
-  updateFallingObjects(level);
-  updateProjectiles(level);
-  checkHazards(level);
-  checkPortal(level);
-
-  drawLevel(level);
-
-  requestAnimationFrame(gameLoop);
-}
-
-
-
-/* ============================================
-   LEVEL BUTTON CLICK HANDLERS
-   ============================================ */
-levelButtons.forEach(btn => {
-  btn.addEventListener("click", () => {
-    const idx = parseInt(btn.dataset.level);
-    if (!unlockedLevels[idx]) return;
-    startLevel(idx);
-  });
-});
+    /* === LEVEL BUTTON HANDLERS === */
+    levelButtons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        const idx = parseInt(btn.dataset.level);
+        if (!unlockedLevels[idx]) return;
+        startLevel(idx);
+      });
+    });
+  </script>
+</body>
+</html>
