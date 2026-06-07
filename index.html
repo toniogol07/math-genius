@@ -15,6 +15,12 @@
       color: #fff;
     }
 
+    canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+    }
+
     #uiLayer {
       position: absolute;
       inset: 0;
@@ -124,17 +130,11 @@
       background: rgba(0, 0, 0, 0.6);
       border: 1px solid rgba(0, 255, 255, 0.4);
       margin-top: 4px;
-      min-width: 120px;
+      min-width: 140px;
     }
 
     #hudBottomRight strong {
       color: #00f5ff;
-    }
-
-    canvas {
-      display: block;
-      width: 100vw;
-      height: 100vh;
     }
   </style>
 </head>
@@ -144,7 +144,7 @@
   <div id="uiLayer">
     <div id="startScreen">
       <h1>NEON ARENA</h1>
-      <p>Top‑down 2D skydespil – sværhedsgrad følger klassetrin.</p>
+      <p>2D top‑down skydespil – sværhedsgrad følger klassetrin.</p>
 
       <label for="gradeSelect">Vælg klassetrin (1.–9. klasse)</label>
       <select id="gradeSelect">
@@ -172,7 +172,7 @@
 
   <div id="hudBottomRight" style="display:none;">
     <div class="box" id="hudAmmo"><strong>Ammo:</strong> 12 / 12</div>
-    <div class="box" id="hudInfo"><strong>Tip:</strong> WASD til at bevæge, mus til at sigte, klik for at skyde.</div>
+    <div class="box" id="hudInfo"><strong>Tip:</strong> WASD bevægelse, SPACE skyder.</div>
   </div>
 
   <script>
@@ -186,8 +186,8 @@
     window.addEventListener("resize", resizeCanvas);
     resizeCanvas();
 
-    const startScreen = document.getElementById("startScreen");
     const uiLayer = document.getElementById("uiLayer");
+    const startScreen = document.getElementById("startScreen");
     const gradeSelect = document.getElementById("gradeSelect");
     const startBtn = document.getElementById("startBtn");
 
@@ -199,25 +199,25 @@
     const hudBottomRight = document.getElementById("hudBottomRight");
     const hudAmmo = document.getElementById("hudAmmo");
     const hudInfo = document.getElementById("hudInfo");
+    const keys = { w:false, a:false, s:false, d:false, space:false };
 
-    const keys = { w:false, a:false, s:false, d:false };
     window.addEventListener("keydown", e => {
       if (e.code === "KeyW") keys.w = true;
       if (e.code === "KeyA") keys.a = true;
       if (e.code === "KeyS") keys.s = true;
       if (e.code === "KeyD") keys.d = true;
+      if (e.code === "Space") {
+        keys.space = true;
+        tryShoot();
+      }
     });
+
     window.addEventListener("keyup", e => {
       if (e.code === "KeyW") keys.w = false;
       if (e.code === "KeyA") keys.a = false;
       if (e.code === "KeyS") keys.s = false;
       if (e.code === "KeyD") keys.d = false;
-    });
-
-    const mouse = { x: 0, y: 0 };
-    window.addEventListener("mousemove", e => {
-      mouse.x = e.clientX;
-      mouse.y = e.clientY;
+      if (e.code === "Space") keys.space = false;
     });
 
     let running = false;
@@ -231,6 +231,9 @@
       hp: 100,
       maxHp: 100
     };
+
+    let moveAngle = 0;
+    let lastMoveAngle = 0;
 
     let bullets = [];
     let enemies = [];
@@ -268,19 +271,15 @@
       }, 1000);
     }
 
-    window.addEventListener("mousedown", e => {
-      if (!running) return;
-      tryShoot();
-    });
-
     function tryShoot() {
+      if (!running) return;
       if (!canShoot || reloading) return;
       if (ammo <= 0) {
         reloadWeapon();
         return;
       }
 
-      const angle = Math.atan2(mouse.y - player.y, mouse.x - player.x);
+      const angle = lastMoveAngle;
       const speed = 520;
 
       bullets.push({
@@ -301,21 +300,14 @@
 
     function spawnEnemy() {
       const margin = 60;
-      const side = Math.floor(Math.random() * 4);
       let x, y;
-      if (side === 0) {
-        x = Math.random() * canvas.width;
-        y = -margin;
-      } else if (side === 1) {
-        x = canvas.width + margin;
-        y = Math.random() * canvas.height;
-      } else if (side === 2) {
-        x = Math.random() * canvas.width;
-        y = canvas.height + margin;
+
+      if (Math.random() < 0.5) {
+        x = -margin; // venstre
       } else {
-        x = -margin;
-        y = Math.random() * canvas.height;
+        x = canvas.width + margin; // højre
       }
+      y = Math.random() * canvas.height;
 
       const baseSpeed = 60 + grade * 10;
       const hp = 10 + grade * 2;
@@ -350,6 +342,9 @@
       player.x = canvas.width / 2;
       player.y = canvas.height / 2;
       player.hp = player.maxHp;
+
+      moveAngle = 0;
+      lastMoveAngle = 0;
 
       bullets = [];
       enemies = [];
@@ -397,6 +392,12 @@
 
       const moveX = (keys.d ? 1 : 0) - (keys.a ? 1 : 0);
       const moveY = (keys.s ? 1 : 0) - (keys.w ? 1 : 0);
+
+      if (moveX !== 0 || moveY !== 0) {
+        moveAngle = Math.atan2(moveY, moveX);
+        lastMoveAngle = moveAngle;
+      }
+
       const len = Math.hypot(moveX, moveY) || 1;
       const nx = moveX / len;
       const ny = moveY / len;
@@ -510,7 +511,6 @@
         startWave();
       }
     }
-
     function drawNeonBackground() {
       const w = canvas.width;
       const h = canvas.height;
@@ -546,7 +546,7 @@
     }
 
     function drawPlayer() {
-      const angle = Math.atan2(mouse.y - player.y, mouse.x - player.x);
+      const angle = (keys.w || keys.a || keys.s || keys.d) ? moveAngle : lastMoveAngle;
 
       ctx.save();
       ctx.translate(player.x, player.y);
@@ -555,14 +555,12 @@
       ctx.shadowColor = "#00f5ff";
       ctx.shadowBlur = 20;
 
+      ctx.fillStyle = "#00ffbb";
+      ctx.fillRect(-10, -20, 20, 40);
+
       ctx.fillStyle = "#00f5ff";
       ctx.beginPath();
-      ctx.arc(0, 0, player.r, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.fillStyle = "#00ffbb";
-      ctx.beginPath();
-      ctx.arc(player.r * 0.6, 0, 6, 0, Math.PI * 2);
+      ctx.arc(0, -25, 12, 0, Math.PI * 2);
       ctx.fill();
 
       ctx.restore();
@@ -629,7 +627,7 @@
       });
     }
 
-    function draw(dt) {
+    function draw() {
       drawNeonBackground();
       drawParticles();
       drawEnemies();
@@ -653,7 +651,7 @@
 
       if (running) {
         update(dt);
-        draw(dt);
+        draw();
       }
 
       requestAnimationFrame(loop);
