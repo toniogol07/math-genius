@@ -149,12 +149,7 @@
       margin-top: 4px;
     }
 
-    #quizScreen h2 {
-      margin-top: 0;
-      margin-bottom: 8px;
-    }
-
-    #gameOverScreen h2 {
+    #quizScreen h2, #gameOverScreen h2 {
       margin-top: 0;
       margin-bottom: 8px;
     }
@@ -166,7 +161,7 @@
   <div id="uiLayer">
     <div id="startScreen">
       <h1>NEON ALIEN RAID</h1>
-      <p>2D neon alien skydespil med waves og matematik‑quiz.</p>
+      <p>2D neon alien skydespil med lange waves og matematik‑quiz.</p>
 
       <label for="gradeSelect">Vælg klassetrin (1.–9. klasse)</label>
       <select id="gradeSelect">
@@ -357,9 +352,10 @@
 
       const roll = Math.random();
       let type = "grunt";
-      if (roll > 0.7 && roll <= 0.85) type = "runner";
-      else if (roll > 0.85 && roll <= 0.95) type = "shooter";
-      else if (roll > 0.95) type = "tank";
+      if (roll > 0.55 && roll <= 0.75) type = "runner";
+      else if (roll > 0.75 && roll <= 0.9) type = "shooter";
+      else if (roll > 0.9 && roll <= 0.97) type = "tank";
+      else if (roll > 0.97) type = "jumper";
 
       const baseSpeed = 40 + grade * 8 + wave * 3;
       let hp = 30 + grade * 6 + wave * 2;
@@ -367,13 +363,15 @@
       let shootCooldown = 1.5 + Math.random();
 
       if (type === "runner") {
-        speedMul = 1.8;
+        speedMul = 2.0;
         hp *= 0.7;
       } else if (type === "tank") {
         speedMul = 0.6;
-        hp *= 2.2;
+        hp *= 2.5;
       } else if (type === "shooter") {
         speedMul = 0.9;
+      } else if (type === "jumper") {
+        speedMul = 1.2;
       }
 
       enemies.push({
@@ -382,22 +380,24 @@
         w: 32,
         h: 50,
         vx: side < 0 ? baseSpeed * speedMul : -baseSpeed * speedMul,
+        vy: 0,
         type,
         baseSpeed,
         speedMul,
         hp,
         maxHp: hp,
         shootCooldown,
-        jumpCooldown: 1 + Math.random() * 2
+        jumpCooldown: 1 + Math.random() * 2,
+        onGround: true
       });
     }
 
     function startWave() {
       enemies = [];
       enemyBullets = [];
-      const base = 10;
-      const extraByWave = wave * 4;
-      const extraByGrade = grade * 2;
+      const base = 18;                 // højere base
+      const extraByWave = wave * 8;    // skalerer hårdt med wave
+      const extraByGrade = grade * 3;  // sværere ved højere klassetrin
       const count = base + extraByWave + extraByGrade;
       for (let i = 0; i < count; i++) spawnEnemy();
     }
@@ -430,7 +430,7 @@
     }
 
     function difficultyEnemyShootChance() {
-      return 0.25 + grade * 0.06 + wave * 0.04;
+      return 0.30 + grade * 0.07 + wave * 0.05; // markant mere skydning
     }
 
     function update(dt) {
@@ -487,22 +487,59 @@
       });
       bullets = bullets.filter(b => b.life < b.maxLife);
 
+      updateEnemies(dt);
+      updateEnemyBullets(dt);
+      handleCollisions();
+
+      if (enemies.length === 0) {
+        startQuiz();
+      }
+    }
+
+    function updateEnemies(dt) {
+      const gravity = 1400;
+
       enemies.forEach(e => {
         const dir = player.x > e.x ? 1 : -1;
         e.vx = dir * e.baseSpeed * e.speedMul;
-        e.x += e.vx * dt;
-
-        const groundY = canvas.height - 80;
-        e.y = groundY - e.h;
 
         if (e.type === "runner") {
           e.vx *= 1.4;
         }
 
+        e.vy += gravity * dt;
+        e.x += e.vx * dt;
+        e.y += e.vy * dt;
+        e.onGround = false;
+
+        const groundY = canvas.height - 80;
+        for (const p of platforms) {
+          if (e.x < p.x + p.w &&
+              e.x + e.w > p.x &&
+              e.y < p.y + p.h &&
+              e.y + e.h > p.y) {
+
+            const prevY = e.y - e.vy * dt;
+            if (prevY + e.h <= p.y) {
+              e.y = p.y - e.h;
+              e.vy = 0;
+              e.onGround = true;
+            }
+          }
+        }
+
+        if (e.type === "jumper") {
+          e.jumpCooldown -= dt;
+          if (e.jumpCooldown <= 0 && e.onGround) {
+            e.jumpCooldown = 1.5 + Math.random() * 1.5;
+            e.vy = -900;
+          }
+        }
+
         if (e.type === "shooter" || e.type === "tank") {
           e.shootCooldown -= dt;
           if (e.shootCooldown <= 0) {
-            e.shootCooldown = (e.type === "tank" ? 2.2 : 1.4) + Math.random();
+            e.shootCooldown = (e.type === "tank" ? 2.0 : 1.2) + Math.random();
             if (Math.random() < difficultyEnemyShootChance()) {
               const speed = 260 + grade * 15 + wave * 8;
               const dx = player.x + player.w/2 - (e.x + e.w/2);
@@ -520,27 +557,19 @@
             }
           }
         }
-
-        if (e.type === "jumper") {
-          e.jumpCooldown -= dt;
-          if (e.jumpCooldown <= 0) {
-            e.jumpCooldown = 2 + Math.random() * 2;
-            const targetPlatform = platforms[1 + Math.floor(Math.random() * (platforms.length - 1))];
-            if (targetPlatform) {
-              e.x = targetPlatform.x + targetPlatform.w / 2;
-              e.y = targetPlatform.y - e.h;
-            }
-          }
-        }
       });
+    }
 
+    function updateEnemyBullets(dt) {
       enemyBullets.forEach(b => {
         b.x += b.vx * dt;
         b.y += b.vy * dt;
         b.life += dt;
       });
       enemyBullets = enemyBullets.filter(b => b.life < b.maxLife);
+    }
 
+    function handleCollisions() {
       bullets.forEach(b => {
         enemies.forEach(e => {
           if (b.x < e.x + e.w &&
@@ -571,12 +600,7 @@
           loseLife();
         }
       });
-
-      if (enemies.length === 0) {
-        startQuiz();
-      }
     }
-
     function loseLife() {
       lives--;
       hudLives.textContent = "Liv: " + lives;
@@ -669,6 +693,7 @@
         if (e.type === "runner") colorCore = "rgba(0,255,0,1)";
         if (e.type === "shooter") colorCore = "rgba(0,200,255,1)";
         if (e.type === "tank") colorCore = "rgba(255,120,0,1)";
+        if (e.type === "jumper") colorCore = "rgba(200,0,255,1)";
 
         const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, 24);
         grad.addColorStop(0, colorCore);
