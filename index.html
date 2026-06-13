@@ -166,7 +166,7 @@
   <div id="uiLayer">
     <div id="startScreen">
       <h1>NEON ALIEN RAID</h1>
-      <p>2D neon alien skydespil med bølger og matematik‑quiz.</p>
+      <p>2D neon alien skydespil med waves og matematik‑quiz.</p>
 
       <label for="gradeSelect">Vælg klassetrin (1.–9. klasse)</label>
       <select id="gradeSelect">
@@ -321,7 +321,7 @@
         return;
       }
 
-      const speed = 600;
+      const speed = 650;
       const dir = player.facing;
 
       bullets.push({
@@ -329,7 +329,7 @@
         y: player.y + player.h/2 - 10,
         vx: dir * speed,
         vy: 0,
-        w: 10,
+        w: 12,
         h: 4,
         life: 0,
         maxLife: 1.2
@@ -338,48 +338,67 @@
       ammo--;
       updateAmmoHUD();
       canShoot = false;
-      fireCooldown = 0.12;
+      fireCooldown = 0.09;
     }
 
     function createPlatforms() {
       const groundY = canvas.height - 80;
       platforms = [
         { x: 0, y: groundY, w: canvas.width, h: 40 },
-        { x: canvas.width * 0.15, y: groundY - 140, w: 160, h: 20 },
-        { x: canvas.width * 0.45, y: groundY - 200, w: 180, h: 20 },
-        { x: canvas.width * 0.75, y: groundY - 130, w: 160, h: 20 }
+        { x: canvas.width * 0.10, y: groundY - 140, w: 180, h: 20 },
+        { x: canvas.width * 0.40, y: groundY - 210, w: 200, h: 20 },
+        { x: canvas.width * 0.72, y: groundY - 150, w: 180, h: 20 }
       ];
     }
 
     function spawnEnemy() {
       const groundY = canvas.height - 80;
       const side = Math.random() < 0.5 ? -60 : canvas.width + 60;
-      const typeRoll = Math.random();
-      let type = "grunt";
-      if (typeRoll > 0.7) type = "runner";
-      if (typeRoll > 0.9) type = "shooter";
 
-      const baseSpeed = 60 + grade * 10;
-      const hp = 20 + grade * 5;
+      const roll = Math.random();
+      let type = "grunt";
+      if (roll > 0.7 && roll <= 0.85) type = "runner";
+      else if (roll > 0.85 && roll <= 0.95) type = "shooter";
+      else if (roll > 0.95) type = "tank";
+
+      const baseSpeed = 40 + grade * 8 + wave * 3;
+      let hp = 30 + grade * 6 + wave * 2;
+      let speedMul = 1;
+      let shootCooldown = 1.5 + Math.random();
+
+      if (type === "runner") {
+        speedMul = 1.8;
+        hp *= 0.7;
+      } else if (type === "tank") {
+        speedMul = 0.6;
+        hp *= 2.2;
+      } else if (type === "shooter") {
+        speedMul = 0.9;
+      }
 
       enemies.push({
         x: side,
         y: groundY - 60,
         w: 32,
         h: 50,
-        vx: side < 0 ? (40 + Math.random()*40) : -(40 + Math.random()*40),
+        vx: side < 0 ? baseSpeed * speedMul : -baseSpeed * speedMul,
         type,
-        speed: baseSpeed,
+        baseSpeed,
+        speedMul,
         hp,
         maxHp: hp,
-        shootCooldown: 1 + Math.random()
+        shootCooldown,
+        jumpCooldown: 1 + Math.random() * 2
       });
     }
 
     function startWave() {
       enemies = [];
       enemyBullets = [];
-      const count = 3 + wave + Math.floor(grade * 0.8);
+      const base = 10;
+      const extraByWave = wave * 4;
+      const extraByGrade = grade * 2;
+      const count = base + extraByWave + extraByGrade;
       for (let i = 0; i < count; i++) spawnEnemy();
     }
 
@@ -411,7 +430,7 @@
     }
 
     function difficultyEnemyShootChance() {
-      return 0.15 + grade * 0.05 + wave * 0.03;
+      return 0.25 + grade * 0.06 + wave * 0.04;
     }
 
     function update(dt) {
@@ -470,18 +489,22 @@
 
       enemies.forEach(e => {
         const dir = player.x > e.x ? 1 : -1;
-        e.vx = dir * e.speed * 0.6;
+        e.vx = dir * e.baseSpeed * e.speedMul;
         e.x += e.vx * dt;
 
         const groundY = canvas.height - 80;
         e.y = groundY - e.h;
 
-        if (e.type === "shooter") {
+        if (e.type === "runner") {
+          e.vx *= 1.4;
+        }
+
+        if (e.type === "shooter" || e.type === "tank") {
           e.shootCooldown -= dt;
           if (e.shootCooldown <= 0) {
-            e.shootCooldown = 1.5 + Math.random();
+            e.shootCooldown = (e.type === "tank" ? 2.2 : 1.4) + Math.random();
             if (Math.random() < difficultyEnemyShootChance()) {
-              const speed = 260 + grade * 10;
+              const speed = 260 + grade * 15 + wave * 8;
               const dx = player.x + player.w/2 - (e.x + e.w/2);
               const dy = player.y + player.h/2 - (e.y + e.h/2);
               const dist = Math.hypot(dx, dy) || 1;
@@ -490,10 +513,22 @@
                 y: e.y + e.h/2,
                 vx: dx / dist * speed,
                 vy: dy / dist * speed,
-                r: 5,
+                r: e.type === "tank" ? 7 : 5,
                 life: 0,
-                maxLife: 2
+                maxLife: 2.5
               });
+            }
+          }
+        }
+
+        if (e.type === "jumper") {
+          e.jumpCooldown -= dt;
+          if (e.jumpCooldown <= 0) {
+            e.jumpCooldown = 2 + Math.random() * 2;
+            const targetPlatform = platforms[1 + Math.floor(Math.random() * (platforms.length - 1))];
+            if (targetPlatform) {
+              e.x = targetPlatform.x + targetPlatform.w / 2;
+              e.y = targetPlatform.y - e.h;
             }
           }
         }
@@ -513,10 +548,13 @@
               b.y < e.y + e.h &&
               b.y + b.h > e.y) {
             b.life = b.maxLife;
-            e.hp -= 20 + grade * 3;
+            let dmg = 22 + grade * 3 + wave * 1.5;
+            if (e.type === "tank") dmg *= 0.7;
+            if (e.type === "runner") dmg *= 1.2;
+            e.hp -= dmg;
             if (e.hp <= 0) {
               e.dead = true;
-              score += 10 + wave * 2 + grade;
+              score += 15 + wave * 3 + grade * 2;
               hudScore.textContent = "Score: " + score;
             }
           }
@@ -614,8 +652,8 @@
       ctx.fill();
 
       ctx.fillStyle = "#ffaa33";
-      ctx.fillRect(5, -25, 30, 6);
-      ctx.fillRect(25, -28, 10, 4);
+      ctx.fillRect(5, -25, 32, 6);
+      ctx.fillRect(30, -28, 12, 4);
 
       ctx.restore();
     }
@@ -627,8 +665,13 @@
         ctx.shadowColor = "#ff00ff";
         ctx.shadowBlur = 18;
 
+        let colorCore = "rgba(255,0,255,1)";
+        if (e.type === "runner") colorCore = "rgba(0,255,0,1)";
+        if (e.type === "shooter") colorCore = "rgba(0,200,255,1)";
+        if (e.type === "tank") colorCore = "rgba(255,120,0,1)";
+
         const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, 24);
-        grad.addColorStop(0, "rgba(255,0,255,1)");
+        grad.addColorStop(0, colorCore);
         grad.addColorStop(1, "rgba(255,0,255,0.1)");
         ctx.fillStyle = grad;
         ctx.beginPath();
