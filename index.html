@@ -1,907 +1,514 @@
 <!DOCTYPE html>
 <html lang="da">
 <head>
-  <meta charset="UTF-8">
-  <title>Neon Alien Raid – Endless</title>
-  <style>
+<meta charset="UTF-8">
+<title>Neon Alien Raid – Endless Fixed</title>
+<style>
     html, body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background: radial-gradient(circle at center, #050816 0%, #02030a 60%, #000000 100%);
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      color: #fff;
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: radial-gradient(circle at center, #050816 0%, #02030a 60%, #000000 100%);
+        font-family: system-ui, sans-serif;
+        color: #fff;
     }
-
-    canvas {
-      display: block;
-      width: 100vw;
-      height: 100vh;
-    }
-
+    canvas { display: block; width: 100vw; height: 100vh; }
     #uiLayer {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      pointer-events: none;
+        position: absolute; inset: 0;
+        display: flex; align-items: center; justify-content: center;
+        pointer-events: none;
     }
-
     #startScreen, #quizScreen, #gameOverScreen {
-      pointer-events: auto;
-      background: rgba(10, 10, 30, 0.95);
-      border-radius: 20px;
-      padding: 24px 32px;
-      box-shadow: 0 0 40px rgba(0, 255, 255, 0.3);
-      border: 2px solid rgba(0, 255, 255, 0.6);
-      text-align: center;
-      min-width: 320px;
-      max-width: 420px;
-      display: none;
+        pointer-events: auto;
+        background: rgba(10,10,30,0.95);
+        border-radius: 20px;
+        padding: 24px 32px;
+        border: 2px solid #00ffff88;
+        box-shadow: 0 0 30px #00ffff55;
+        text-align: center;
+        display: none;
+        width: 350px;
     }
-
-    #startScreen h1 {
-      margin: 0 0 10px;
-      font-size: 32px;
-      letter-spacing: 2px;
-      text-shadow: 0 0 12px rgba(0, 255, 255, 0.7);
-    }
-
-    #startScreen p {
-      margin: 4px 0 16px;
-      font-size: 14px;
-      color: #a8b3ff;
-    }
-
-    label {
-      display: block;
-      margin-bottom: 6px;
-      font-weight: 600;
-      text-transform: uppercase;
-      font-size: 12px;
-      color: #8fd5ff;
-    }
-
-    select, input[type="number"] {
-      width: 100%;
-      padding: 8px 10px;
-      border-radius: 10px;
-      border: 1px solid rgba(0, 255, 255, 0.5);
-      background: rgba(5, 10, 30, 0.9);
-      color: #fff;
-      font-size: 14px;
-      outline: none;
-      margin-bottom: 10px;
-    }
-
     button {
-      margin-top: 10px;
-      width: 100%;
-      padding: 10px 0;
-      border-radius: 999px;
-      border: none;
-      background: linear-gradient(90deg, #00f5ff, #00ff88);
-      color: #000;
-      font-weight: 700;
-      font-size: 15px;
-      cursor: pointer;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      box-shadow: 0 0 20px rgba(0, 255, 255, 0.6);
+        width: 100%; padding: 10px 0;
+        border-radius: 999px; border: none;
+        background: linear-gradient(90deg,#00f5ff,#00ff88);
+        font-weight: 700; cursor: pointer;
+        margin-top: 10px;
     }
-
-    button:hover {
-      filter: brightness(1.1);
-      transform: translateY(-1px);
-    }
-
     #hudTop {
-      position: absolute;
-      top: 10px;
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      gap: 16px;
-      font-size: 14px;
-      text-shadow: 0 0 8px rgba(0,0,0,0.8);
-      pointer-events: none;
+        position: absolute; top: 10px; left: 50%;
+        transform: translateX(-50%);
+        display: flex; gap: 16px;
+        pointer-events: none;
     }
-
     #hudTop span {
-      padding: 4px 10px;
-      border-radius: 999px;
-      background: rgba(0, 0, 0, 0.5);
-      border: 1px solid rgba(0, 255, 255, 0.4);
+        padding: 4px 10px; border-radius: 999px;
+        background: rgba(0,0,0,0.5);
+        border: 1px solid #00ffff55;
     }
-
     #hudBottomLeft {
-      position: absolute;
-      left: 16px;
-      bottom: 12px;
-      font-size: 14px;
-      pointer-events: none;
+        position: absolute; left: 16px; bottom: 12px;
+        pointer-events: none;
     }
-
     #hudBottomLeft .box {
-      display: inline-block;
-      padding: 6px 10px;
-      border-radius: 10px;
-      background: rgba(0, 0, 0, 0.6);
-      border: 1px solid rgba(0, 255, 255, 0.4);
-      margin-top: 4px;
-      min-width: 140px;
+        background: rgba(0,0,0,0.6);
+        border: 1px solid #00ffff55;
+        padding: 6px 10px;
+        border-radius: 10px;
+        margin-top: 4px;
     }
-
-    #hudBottomLeft strong {
-      color: #00f5ff;
-    }
-
-    .question {
-      margin: 10px 0;
-      text-align: left;
-      font-size: 15px;
-    }
-
-    .question input {
-      margin-top: 4px;
-    }
-
-    #quizScreen h2, #gameOverScreen h2 {
-      margin-top: 0;
-      margin-bottom: 8px;
-    }
-  </style>
+</style>
 </head>
 <body>
-  <canvas id="game"></canvas>
 
-  <div id="uiLayer">
+<canvas id="game"></canvas>
+
+<div id="uiLayer">
     <div id="startScreen">
-      <h1>NEON ALIEN RAID</h1>
-      <p>Endeløst 2D neon alien skydespil med matematik‑quiz hver 20. kill.</p>
-
-      <label for="gradeSelect">Vælg klassetrin (1.–9. klasse)</label>
-      <select id="gradeSelect">
-        <option value="1">1. klasse (meget let)</option>
-        <option value="2">2. klasse</option>
-        <option value="3">3. klasse</option>
-        <option value="4">4. klasse</option>
-        <option value="5" selected>5. klasse (normal)</option>
-        <option value="6">6. klasse</option>
-        <option value="7">7. klasse</option>
-        <option value="8">8. klasse</option>
-        <option value="9">9. klasse (meget svær)</option>
-      </select>
-
-      <button id="startBtn">Start spil</button>
+        <h1>NEON ALIEN RAID</h1>
+        <p>Endeløst skydespil med matematik‑quiz.</p>
+        <label>Klassetrin:</label>
+        <select id="gradeSelect">
+            <option value="1">1. klasse</option>
+            <option value="2">2. klasse</option>
+            <option value="3">3. klasse</option>
+            <option value="4">4. klasse</option>
+            <option value="5" selected>5. klasse</option>
+            <option value="6">6. klasse</option>
+            <option value="7">7. klasse</option>
+            <option value="8">8. klasse</option>
+            <option value="9">9. klasse</option>
+        </select>
+        <button id="startBtn">Start spil</button>
     </div>
 
     <div id="quizScreen">
-      <h2>Matematik‑runde</h2>
-      <p>Besvar regnestykkerne. Forkert svar = du mister 1 liv, spillet fortsætter.</p>
-      <div id="questions"></div>
-      <button id="submitQuizBtn">Fortsæt</button>
+        <h2>Matematik‑runde</h2>
+        <p>Forkert svar = mister 1 liv</p>
+        <div id="questions"></div>
+        <button id="submitQuizBtn">Fortsæt</button>
     </div>
 
     <div id="gameOverScreen">
-      <h2>Game Over</h2>
-      <p id="gameOverText"></p>
-      <button id="restartBtn">Spil igen</button>
+        <h2>Game Over</h2>
+        <p id="gameOverText"></p>
+        <button id="restartBtn">Spil igen</button>
     </div>
-  </div>
+</div>
 
-  <div id="hudTop" style="display:none;">
+<div id="hudTop" style="display:none;">
     <span id="hudGrade">Klasse: -</span>
     <span id="hudLives">Liv: 3</span>
     <span id="hudKills">Kills: 0</span>
     <span id="hudScore">Score: 0</span>
-  </div>
+</div>
 
-  <div id="hudBottomLeft" style="display:none;">
+<div id="hudBottomLeft" style="display:none;">
     <div class="box" id="hudAmmo"><strong>Ammo:</strong> 30 / 30</div>
-    <div class="box" id="hudInfo"><strong>Styring:</strong> A/D = gå, W = hop, SPACE = skyd.</div>
-  </div>
+    <div class="box"><strong>Styring:</strong> A/D = gå, W = hop, SPACE = skyd</div>
+</div>
 
-  <script>
-    const canvas = document.getElementById("game");
-    const ctx = canvas.getContext("2d");
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
 
-    function resizeCanvas() {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    }
-    window.addEventListener("resize", resizeCanvas);
-    resizeCanvas();
+function resize() {
+    canvas.width = innerWidth;
+    canvas.height = innerHeight;
+}
+resize();
+addEventListener("resize", resize);
 
-    const uiLayer = document.getElementById("uiLayer");
-    const startScreen = document.getElementById("startScreen");
-    const quizScreen = document.getElementById("quizScreen");
-    const gameOverScreen = document.getElementById("gameOverScreen");
-    const gradeSelect = document.getElementById("gradeSelect");
-    const startBtn = document.getElementById("startBtn");
-    const submitQuizBtn = document.getElementById("submitQuizBtn");
-    const restartBtn = document.getElementById("restartBtn");
-    const questionsDiv = document.getElementById("questions");
-    const gameOverText = document.getElementById("gameOverText");
+const keys = { a:false, d:false, w:false, space:false };
+addEventListener("keydown", e=>{
+    if(e.code==="KeyA") keys.a=true;
+    if(e.code==="KeyD") keys.d=true;
+    if(e.code==="KeyW") keys.w=true;
+    if(e.code==="Space"){ if(!keys.space) shoot(); keys.space=true; }
+});
+addEventListener("keyup", e=>{
+    if(e.code==="KeyA") keys.a=false;
+    if(e.code==="KeyD") keys.d=false;
+    if(e.code==="KeyW") keys.w=false;
+    if(e.code==="Space") keys.space=false;
+});
 
-    const hudTop = document.getElementById("hudTop");
-    const hudGrade = document.getElementById("hudGrade");
-    const hudLives = document.getElementById("hudLives");
-    const hudKills = document.getElementById("hudKills");
-    const hudScore = document.getElementById("hudScore");
-    const hudBottomLeft = document.getElementById("hudBottomLeft");
-    const hudAmmo = document.getElementById("hudAmmo");
+let running=false, inQuiz=false, last=0;
 
-    const keys = { a:false, d:false, w:false, space:false };
+let grade=5, lives=3, kills=0, score=0;
 
-    window.addEventListener("keydown", e => {
-      if (e.code === "KeyA") keys.a = true;
-      if (e.code === "KeyD") keys.d = true;
-      if (e.code === "KeyW") keys.w = true;
-      if (e.code === "Space") {
-        if (!keys.space) tryShoot();
-        keys.space = true;
-      }
+const player={
+    x:0, y:0, w:32, h:60,
+    vx:0, vy:0,
+    speed:260,
+    jumpPower:800,   // højere hop
+    onGround:false,
+    facing:1
+};
+
+let bullets=[], enemies=[], enemyBullets=[];
+let platforms=[];
+let ammo=30, maxAmmo=30, canShoot=true, reloading=false;
+let spawnTimer=0;
+
+function clampPlayer(){
+    if(player.x<0) player.x=0;
+    if(player.x+player.w>canvas.width) player.x=canvas.width-player.w;
+}
+
+function createPlatforms(){
+    const g=canvas.height-80;
+    platforms=[
+        {x:0,y:g,w:canvas.width,h:40},
+        {x:canvas.width*0.1,y:g-160,w:180,h:20},
+        {x:canvas.width*0.4,y:g-230,w:200,h:20},
+        {x:canvas.width*0.72,y:g-170,w:180,h:20},
+
+        // ⭐ NYE SPAWN‑PLATFORME UDENFOR BANEN
+        {x:-200,y:g-40,w:200,h:20},
+        {x:canvas.width,y:g-40,w:200,h:20}
+    ];
+}
+
+function shoot(){
+    if(!running||inQuiz||!canShoot||reloading) return;
+    if(ammo<=0){ reload(); return; }
+
+    bullets.push({
+        x:player.x+player.w/2+player.facing*20,
+        y:player.y+player.h/2,
+        vx:player.facing*700,
+        vy:0,
+        w:12,h:4,life:0,maxLife:1.2
     });
 
-    window.addEventListener("keyup", e => {
-      if (e.code === "KeyA") keys.a = false;
-      if (e.code === "KeyD") keys.d = false;
-      if (e.code === "KeyW") keys.w = false;
-      if (e.code === "Space") keys.space = false;
-    });
+    ammo--;
+    updateAmmoHUD();
+    canShoot=false;
+    setTimeout(()=>canShoot=true,90);
+}
 
-    let running = false;
-    let inQuiz = false;
-    let lastTime = 0;
-
-    const player = {
-      x: 0,
-      y: 0,
-      w: 32,
-      h: 60,
-      vx: 0,
-      vy: 0,
-      speed: 260,
-      jumpPower: 750, // højere hop
-      onGround: false,
-      facing: 1
-    };
-
-    let bullets = [];
-    let enemies = [];
-    let enemyBullets = [];
-    let platforms = [];
-
-    let score = 0;
-    let grade = 5;
-    let lives = 3;
-    let kills = 0;
-
-    let fireCooldown = 0;
-    let ammo = 30;
-    let maxAmmo = 30;
-    let canShoot = true;
-    let reloading = false;
-
-    let spawnTimer = 0;
-
-    function updateAmmoHUD() {
-      if (reloading) {
-        hudAmmo.innerHTML = "<strong>Ammo:</strong> Reloading...";
-      } else {
-        hudAmmo.innerHTML = "<strong>Ammo:</strong> " + ammo + " / " + maxAmmo;
-      }
-    }
-
-    function reloadWeapon() {
-      if (reloading) return;
-      reloading = true;
-      canShoot = false;
-      updateAmmoHUD();
-      setTimeout(() => {
-        ammo = maxAmmo;
-        reloading = false;
-        canShoot = true;
+function reload(){
+    if(reloading) return;
+    reloading=true; canShoot=false;
+    updateAmmoHUD();
+    setTimeout(()=>{
+        ammo=maxAmmo;
+        reloading=false; canShoot=true;
         updateAmmoHUD();
-      }, 900);
+    },900);
+}
+
+function updateAmmoHUD(){
+    hudAmmo.innerHTML=reloading?"<strong>Ammo:</strong> Reloading...":
+    `<strong>Ammo:</strong> ${ammo} / ${maxAmmo}`;
+}
+
+function spawnEnemy(){
+    const g=canvas.height-80;
+    const side=Math.random()<0.5?-150:canvas.width+150;
+
+    const typeRoll=Math.random();
+    let type="grunt";
+    if(typeRoll>0.6 && typeRoll<=0.8) type="runner";
+    else if(typeRoll>0.8 && typeRoll<=0.93) type="shooter";
+    else if(typeRoll>0.93) type="tank";
+
+    const baseSpeed=40+grade*8+kills*0.3;
+    let hp=30+grade*6+kills*0.4;
+    let speedMul=1;
+
+    if(type==="runner"){ speedMul=2; hp*=0.7; }
+    if(type==="tank"){ speedMul=0.6; hp*=2.5; }
+
+    enemies.push({
+        x:side, y:g-60, w:32, h:50,
+        vx:side<0?baseSpeed*speedMul:-baseSpeed*speedMul,
+        vy:0,
+        type, hp, maxHp:hp,
+        shootCooldown:1+Math.random()*1.5
+    });
+}
+
+function resetGame(){
+    createPlatforms();
+    player.x=canvas.width/2;
+    player.y=canvas.height-200;
+    player.vx=0; player.vy=0;
+
+    bullets=[]; enemies=[]; enemyBullets=[];
+    lives=3; kills=0; score=0;
+    ammo=maxAmmo; reloading=false; canShoot=true;
+
+    hudLives.textContent="Liv: "+lives;
+    hudKills.textContent="Kills: "+kills;
+    hudScore.textContent="Score: "+score;
+    updateAmmoHUD();
+}
+
+function update(dt){
+    if(!running||inQuiz) return;
+
+    const move=(keys.d?1:0)-(keys.a?1:0);
+    if(move!==0) player.facing=move>0?1:-1;
+    player.vx=move*player.speed;
+
+    if(keys.w&&player.onGround){
+        player.vy=-player.jumpPower;
+        player.onGround=false;
     }
 
-    function tryShoot() {
-      if (!running || inQuiz) return;
-      if (!canShoot || reloading) return;
-      if (ammo <= 0) {
-        reloadWeapon();
-        return;
-      }
+    player.vy+=1400*dt;
+    player.x+=player.vx*dt;
+    player.y+=player.vy*dt;
 
-      const speed = 650;
-      const dir = player.facing;
+    clampPlayer();
 
-      bullets.push({
-        x: player.x + player.w/2 + dir * 20,
-        y: player.y + player.h/2 - 10,
-        vx: dir * speed,
-        vy: 0,
-        w: 12,
-        h: 4,
-        life: 0,
-        maxLife: 1.2
-      });
-
-      ammo--;
-      updateAmmoHUD();
-      canShoot = false;
-      fireCooldown = 0.09;
-    }
-
-    function createPlatforms() {
-      const groundY = canvas.height - 80;
-      platforms = [
-        { x: 0, y: groundY, w: canvas.width, h: 40 },
-        { x: canvas.width * 0.10, y: groundY - 160, w: 180, h: 20 },
-        { x: canvas.width * 0.40, y: groundY - 230, w: 200, h: 20 },
-        { x: canvas.width * 0.72, y: groundY - 170, w: 180, h: 20 }
-      ];
-    }
-
-    function spawnEnemy() {
-      const groundY = canvas.height - 80;
-      const side = Math.random() < 0.5 ? -60 : canvas.width + 60;
-
-      const roll = Math.random();
-      let type = "grunt";
-      if (roll > 0.55 && roll <= 0.75) type = "runner";
-      else if (roll > 0.75 && roll <= 0.9) type = "shooter";
-      else if (roll > 0.9 && roll <= 0.97) type = "tank";
-      else if (roll > 0.97) type = "jumper";
-
-      const baseSpeed = 40 + grade * 8 + kills * 0.3;
-      let hp = 30 + grade * 6 + kills * 0.4;
-      let speedMul = 1;
-      let shootCooldown = 1.5 + Math.random();
-
-      if (type === "runner") {
-        speedMul = 2.0;
-        hp *= 0.7;
-      } else if (type === "tank") {
-        speedMul = 0.6;
-        hp *= 2.5;
-      } else if (type === "shooter") {
-        speedMul = 0.9;
-      } else if (type === "jumper") {
-        speedMul = 1.2;
-      }
-
-      enemies.push({
-        x: side,
-        y: groundY - 60,
-        w: 32,
-        h: 50,
-        vx: side < 0 ? baseSpeed * speedMul : -baseSpeed * speedMul,
-        vy: 0,
-        type,
-        baseSpeed,
-        speedMul,
-        hp,
-        maxHp: hp,
-        shootCooldown,
-        jumpCooldown: 1 + Math.random() * 2,
-        onGround: true
-      });
-    }
-
-    function resetGame() {
-      createPlatforms();
-      player.x = canvas.width / 2 - 50;
-      player.y = canvas.height - 200;
-      player.vx = 0;
-      player.vy = 0;
-      player.onGround = false;
-      player.facing = 1;
-
-      bullets = [];
-      enemies = [];
-      enemyBullets = [];
-
-      score = 0;
-      lives = 3;
-      kills = 0;
-      spawnTimer = 0;
-
-      ammo = maxAmmo;
-      reloading = false;
-      canShoot = true;
-      updateAmmoHUD();
-
-      hudScore.textContent = "Score: " + score;
-      hudLives.textContent = "Liv: " + lives;
-      hudKills.textContent = "Kills: " + kills;
-    }
-
-    function difficultyEnemyShootChance() {
-      return 0.20 + grade * 0.05 + kills * 0.003;
-    }
-
-    function update(dt) {
-      if (!running || inQuiz) return;
-
-      const moveX = (keys.d ? 1 : 0) - (keys.a ? 1 : 0);
-      if (moveX !== 0) {
-        player.facing = moveX > 0 ? 1 : -1;
-      }
-
-      player.vx = moveX * player.speed;
-
-      if (keys.w && player.onGround) {
-        player.vy = -player.jumpPower;
-        player.onGround = false;
-      }
-
-      player.vy += 1400 * dt;
-
-      player.x += player.vx * dt;
-      player.y += player.vy * dt;
-
-      player.onGround = false;
-      for (const p of platforms) {
-        if (player.x < p.x + p.w &&
-            player.x + player.w > p.x &&
-            player.y < p.y + p.h &&
-            player.y + player.h > p.y) {
-
-          const prevY = player.y - player.vy * dt;
-          if (prevY + player.h <= p.y) {
-            player.y = p.y - player.h;
-            player.vy = 0;
-            player.onGround = true;
-          }
+    player.onGround=false;
+    for(const p of platforms){
+        if(player.x< p.x+p.w &&
+           player.x+player.w>p.x &&
+           player.y< p.y+p.h &&
+           player.y+player.h>p.y){
+            const prevY=player.y-player.vy*dt;
+            if(prevY+player.h<=p.y){
+                player.y=p.y-player.h;
+                player.vy=0;
+                player.onGround=true;
+            }
         }
-      }
+    }
 
-      if (player.y > canvas.height + 200) {
-        loseLife();
-      }
+    if(player.y>canvas.height+200) loseLife();
 
-      if (!canShoot) {
-        fireCooldown -= dt;
-        if (fireCooldown <= 0) {
-          canShoot = true;
-        }
-      }
+    bullets.forEach(b=>{
+        b.x+=b.vx*dt;
+        b.life+=dt;
+    });
+    bullets=bullets.filter(b=>b.life<b.maxLife);
 
-      bullets.forEach(b => {
-        b.x += b.vx * dt;
-        b.y += b.vy * dt;
-        b.life += dt;
-      });
-      bullets = bullets.filter(b => b.life < b.maxLife);
+    updateEnemies(dt);
+    updateEnemyBullets(dt);
+    handleCollisions();
 
-      updateEnemies(dt);
-      updateEnemyBullets(dt);
-      handleCollisions();
-
-      spawnTimer -= dt;
-      if (spawnTimer <= 0) {
-        const baseInterval = 1.2;
-        const minInterval = 0.25;
-        const difficultyFactor = 0.02 * kills + 0.05 * grade;
-        const interval = Math.max(minInterval, baseInterval - difficultyFactor);
-        spawnTimer = interval;
+    spawnTimer-=dt;
+    if(spawnTimer<=0){
         spawnEnemy();
-      }
+        spawnTimer=Math.max(0.25,1.2-(kills*0.02));
+    }
 
-      if (kills > 0 && kills % 20 === 0 && !inQuiz) {
+    if(kills>0 && kills%20===0 && !inQuiz){
         startQuiz();
-      }
     }
+}
 
-    function updateEnemies(dt) {
-      const gravity = 1400;
+function updateEnemies(dt){
+    const g=canvas.height-80;
+    enemies.forEach(e=>{
+        const dir=player.x>e.x?1:-1;
+        e.vx=dir*(40+grade*8+kills*0.3)*e.speedMul||1;
 
-      enemies.forEach(e => {
-        const dir = player.x > e.x ? 1 : -1;
-        e.vx = dir * e.baseSpeed * e.speedMul;
+        e.x+=e.vx*dt;
 
-        if (e.type === "runner") {
-          e.vx *= 1.4;
-        }
+        e.y=g-e.h;
 
-        e.vy += gravity * dt;
-        e.x += e.vx * dt;
-        e.y += e.vy * dt;
-        e.onGround = false;
-
-        for (const p of platforms) {
-          if (e.x < p.x + p.w &&
-              e.x + e.w > p.x &&
-              e.y < p.y + p.h &&
-              e.y + e.h > p.y) {
-
-            const prevY = e.y - e.vy * dt;
-            if (prevY + e.h <= p.y) {
-              e.y = p.y - e.h;
-              e.vy = 0;
-              e.onGround = true;
+        e.shootCooldown-=dt;
+        if(e.type==="shooter"||e.type==="tank"){
+            if(e.shootCooldown<=0){
+                e.shootCooldown=1+Math.random()*1.5;
+                if(Math.random()<0.25+grade*0.05){
+                    const dx=player.x-e.x;
+                    const dy=player.y-e.y;
+                    const d=Math.hypot(dx,dy)||1;
+                    enemyBullets.push({
+                        x:e.x+e.w/2, y:e.y+e.h/2,
+                        vx:(dx/d)*(200+grade*20),
+                        vy:(dy/d)*(200+grade*20),
+                        r:e.type==="tank"?7:5,
+                        life:0,maxLife:2
+                    });
+                }
             }
-          }
         }
+    });
+}
 
-        if (e.type === "jumper") {
-          e.jumpCooldown -= dt;
-          if (e.jumpCooldown <= 0 && e.onGround) {
-            e.jumpCooldown = 1.5 + Math.random() * 1.5;
-            e.vy = -900;
-          }
-        }
+function updateEnemyBullets(dt){
+    enemyBullets.forEach(b=>{
+        b.x+=b.vx*dt;
+        b.y+=b.vy*dt;
+        b.life+=dt;
+    });
+    enemyBullets=enemyBullets.filter(b=>b.life<b.maxLife);
+}
 
-        if (e.type === "shooter" || e.type === "tank") {
-          e.shootCooldown -= dt;
-          if (e.shootCooldown <= 0) {
-            e.shootCooldown = (e.type === "tank" ? 2.0 : 1.2) + Math.random();
-            if (Math.random() < difficultyEnemyShootChance()) {
-              const speed = 260 + grade * 15 + kills * 2;
-              const dx = player.x + player.w/2 - (e.x + e.w/2);
-              const dy = player.y + player.h/2 - (e.y + e.h/2);
-              const dist = Math.hypot(dx, dy) || 1;
-              enemyBullets.push({
-                x: e.x + e.w/2,
-                y: e.y + e.h/2,
-                vx: dx / dist * speed,
-                vy: dy / dist * speed,
-                r: e.type === "tank" ? 7 : 5,
-                life: 0,
-                maxLife: 2.5
-              });
+function handleCollisions(){
+    bullets.forEach(b=>{
+        enemies.forEach(e=>{
+            if(b.x<e.x+e.w &&
+               b.x+b.w>e.x &&
+               b.y<e.y+e.h &&
+               b.y+b.h>e.y){
+                b.life=b.maxLife;
+                e.hp-=25+grade*3+kills*0.4;
+                if(e.hp<=0){
+                    e.dead=true;
+                    kills++;
+                    score+=10+grade*2+Math.floor(kills*0.5);
+                    hudKills.textContent="Kills: "+kills;
+                    hudScore.textContent="Score: "+score;
+                }
             }
-          }
-        }
-      });
-    }
-
-    function updateEnemyBullets(dt) {
-      enemyBullets.forEach(b => {
-        b.x += b.vx * dt;
-        b.y += b.vy * dt;
-        b.life += dt;
-      });
-      enemyBullets = enemyBullets.filter(b => b.life < b.maxLife);
-    }
-
-    function handleCollisions() {
-      bullets.forEach(b => {
-        enemies.forEach(e => {
-          if (b.x < e.x + e.w &&
-              b.x + b.w > e.x &&
-              b.y < e.y + e.h &&
-              b.y + b.h > e.y) {
-            b.life = b.maxLife;
-            let dmg = 22 + grade * 3 + kills * 0.5;
-            if (e.type === "tank") dmg *= 0.7;
-            if (e.type === "runner") dmg *= 1.2;
-            e.hp -= dmg;
-            if (e.hp <= 0) {
-              e.dead = true;
-              kills++;
-              score += 10 + grade * 2 + Math.floor(kills * 0.5);
-              hudScore.textContent = "Score: " + score;
-              hudKills.textContent = "Kills: " + kills;
-            }
-          }
         });
-      });
-      enemies = enemies.filter(e => !e.dead);
+    });
+    enemies=enemies.filter(e=>!e.dead);
 
-      enemyBullets.forEach(b => {
-        if (b.x > player.x &&
-            b.x < player.x + player.w &&
-            b.y > player.y &&
-            b.y < player.y + player.h) {
-          b.life = b.maxLife;
-          loseLife();
+    enemyBullets.forEach(b=>{
+        if(b.x>player.x &&
+           b.x<player.x+player.w &&
+           b.y>player.y &&
+           b.y<player.y+player.h){
+            b.life=b.maxLife;
+            loseLife();
         }
-      });
-    }
+    });
+}
 
-    function loseLife() {
-      lives--;
-      hudLives.textContent = "Liv: " + lives;
-      if (lives <= 0) {
-        gameOver();
-      } else {
-        player.x = canvas.width / 2 - 50;
-        player.y = canvas.height - 200;
-        player.vx = 0;
-        player.vy = 0;
-      }
-    }
+function loseLife(){
+    lives--;
+    hudLives.textContent="Liv: "+lives;
+    if(lives<=0){ gameOver(); return; }
+    player.x=canvas.width/2;
+    player.y=canvas.height-200;
+}
 
-    function drawBackground() {
-      const w = canvas.width;
-      const h = canvas.height;
+function draw(){
+    ctx.fillStyle="#000";
+    ctx.fillRect(0,0,canvas.width,canvas.height);
 
-      const grad = ctx.createRadialGradient(
-        w / 2, h / 2, 0,
-        w / 2, h / 2, Math.max(w, h)
-      );
-      grad.addColorStop(0, "#050816");
-      grad.addColorStop(0.5, "#02030a");
-      grad.addColorStop(1, "#000000");
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle="#00ffff33";
+    platforms.forEach(p=>ctx.fillRect(p.x,p.y,p.w,p.h));
 
-      ctx.save();
-      ctx.globalAlpha = 0.12;
-      ctx.strokeStyle = "#0ff";
-      ctx.lineWidth = 1;
-      const gridSize = 80;
-      for (let x = 0; x < w; x += gridSize) {
+    enemies.forEach(e=>{
+        ctx.fillStyle="magenta";
+        ctx.fillRect(e.x,e.y,e.w,e.h);
+    });
+
+    bullets.forEach(b=>{
+        ctx.fillStyle="yellow";
+        ctx.fillRect(b.x,b.y,b.w,b.h);
+    });
+
+    enemyBullets.forEach(b=>{
+        ctx.fillStyle="red";
         ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, h);
-        ctx.stroke();
-      }
-      for (let y = 0; y < h; y += gridSize) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(w, y);
-        ctx.stroke();
-      }
-      ctx.restore();
-    }
-
-    function drawPlatforms() {
-      ctx.save();
-      ctx.shadowColor = "#00f5ff";
-      ctx.shadowBlur = 15;
-      ctx.fillStyle = "rgba(0,255,255,0.3)";
-      platforms.forEach(p => {
-        ctx.fillRect(p.x, p.y, p.w, p.h);
-      });
-      ctx.restore();
-    }
-
-    function drawPlayer() {
-      ctx.save();
-      ctx.translate(player.x + player.w/2, player.y + player.h/2);
-      ctx.scale(player.facing, 1);
-
-      ctx.shadowColor = "#00f5ff";
-      ctx.shadowBlur = 20;
-
-      ctx.fillStyle = "#00ffbb";
-      ctx.fillRect(-10, -30, 20, 40);
-
-      ctx.fillStyle = "#00f5ff";
-      ctx.beginPath();
-      ctx.arc(0, -40, 12, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.fillStyle = "#ffaa33";
-      ctx.fillRect(5, -25, 32, 6);
-      ctx.fillRect(30, -28, 12, 4);
-
-      ctx.restore();
-    }
-
-    function drawEnemies() {
-      enemies.forEach(e => {
-        ctx.save();
-        ctx.translate(e.x + e.w/2, e.y + e.h/2);
-        ctx.shadowColor = "#ff00ff";
-        ctx.shadowBlur = 18;
-
-        let colorCore = "rgba(255,0,255,1)";
-        if (e.type === "runner") colorCore = "rgba(0,255,0,1)";
-        if (e.type === "shooter") colorCore = "rgba(0,200,255,1)";
-        if (e.type === "tank") colorCore = "rgba(255,120,0,1)";
-        if (e.type === "jumper") colorCore = "rgba(200,0,255,1)";
-
-        const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, 24);
-        grad.addColorStop(0, colorCore);
-        grad.addColorStop(1, "rgba(255,0,255,0.1)");
-        ctx.fillStyle = grad;
-        ctx.beginPath();
-        ctx.ellipse(0, 0, 20, 26, 0, 0, Math.PI * 2);
+        ctx.arc(b.x,b.y,b.r,0,Math.PI*2);
         ctx.fill();
+    });
 
-        ctx.fillStyle = "rgba(0,0,0,0.7)";
-        ctx.fillRect(-20, -30, 40, 4);
-        ctx.fillStyle = "#00ff88";
-        const ratio = e.hp / e.maxHp;
-        ctx.fillRect(-20, -30, 40 * ratio, 4);
+    ctx.save();
+    ctx.translate(player.x+player.w/2,player.y+player.h/2);
+    ctx.scale(player.facing,1);
+    ctx.fillStyle="#00ffbb";
+    ctx.fillRect(-10,-30,20,40);
+    ctx.fillStyle="#ffaa33";
+    ctx.fillRect(5,-25,32,6);
+    ctx.restore();
+}
 
-        ctx.restore();
-      });
-    }
-
-    function drawBullets() {
-      ctx.save();
-      ctx.shadowBlur = 15;
-
-      ctx.shadowColor = "#ffff00";
-      ctx.fillStyle = "#ffff66";
-      bullets.forEach(b => {
-        ctx.fillRect(b.x, b.y, b.w, b.h);
-      });
-
-      ctx.shadowColor = "#ff0066";
-      ctx.fillStyle = "#ff3366";
-      enemyBullets.forEach(b => {
-        ctx.beginPath();
-        ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
-        ctx.fill();
-      });
-
-      ctx.restore();
-    }
-
-    function draw() {
-      drawBackground();
-      drawPlatforms();
-      drawEnemies();
-      drawBullets();
-      drawPlayer();
-    }
-
-    function gameOver() {
-      running = false;
-      inQuiz = false;
-      hudTop.style.display = "none";
-      hudBottomLeft.style.display = "none";
-      startScreen.style.display = "none";
-      quizScreen.style.display = "none";
-      gameOverScreen.style.display = "block";
-      uiLayer.style.display = "flex";
-      gameOverText.textContent = "Du fik " + kills + " kills og score " + score + ".";
-    }
-
-    function loop(timestamp) {
-      if (!lastTime) lastTime = timestamp;
-      const dt = (timestamp - lastTime) / 1000;
-      lastTime = timestamp;
-
-      if (running) {
+function loop(t){
+    const dt=(t-last)/1000;
+    last=t;
+    if(running&&!inQuiz){
         update(dt);
         draw();
-      }
-
-      requestAnimationFrame(loop);
     }
-
-    function generateQuestionForGrade(grade) {
-      let a, b, op, text, answer;
-
-      if (grade <= 2) {
-        a = Math.floor(Math.random() * 10);
-        b = Math.floor(Math.random() * 10);
-        op = Math.random() < 0.5 ? "+" : "-";
-      } else if (grade <= 4) {
-        a = Math.floor(Math.random() * 30);
-        b = Math.floor(Math.random() * 30);
-        op = ["+","-","*"][Math.floor(Math.random()*3)];
-      } else if (grade <= 6) {
-        op = ["+","-","*","/"][Math.floor(Math.random()*4)];
-        if (op === "/") {
-          b = Math.floor(Math.random() * 9) + 1;
-          answer = Math.floor(Math.random() * 12);
-          a = b * answer;
-        } else {
-          a = Math.floor(Math.random() * 60);
-          b = Math.floor(Math.random() * 60);
-        }
-      } else {
-        op = ["+","-","*","/"][Math.floor(Math.random()*4)];
-        if (op === "/") {
-          b = Math.floor(Math.random() * 12) + 1;
-          answer = Math.floor(Math.random() * 20);
-          a = b * answer;
-        } else {
-          a = Math.floor(Math.random() * 100);
-          b = Math.floor(Math.random() * 100);
-        }
-      }
-
-      if (answer === undefined) {
-        if (op === "+") answer = a + b;
-        if (op === "-") answer = a - b;
-        if (op === "*") answer = a * b;
-        if (op === "/") answer = a / b;
-      }
-
-      text = a + " " + op + " " + b + " = ?";
-      return { text, answer };
-    }
-
-    let currentQuestions = [];
-
-    function startQuiz() {
-      inQuiz = true;
-      running = false;
-
-      currentQuestions = [];
-      questionsDiv.innerHTML = "";
-
-      for (let i = 0; i < 3; i++) {
-        const q = generateQuestionForGrade(grade);
-        currentQuestions.push(q);
-
-        const div = document.createElement("div");
-        div.className = "question";
-        div.innerHTML = `
-          <div>${i+1}. ${q.text}</div>
-          <input type="number" data-index="${i}" />
-        `;
-        questionsDiv.appendChild(div);
-      }
-
-      uiLayer.style.display = "flex";
-      quizScreen.style.display = "block";
-      startScreen.style.display = "none";
-      gameOverScreen.style.display = "none";
-    }
-
-    submitQuizBtn.addEventListener("click", () => {
-      let wrong = 0;
-      const inputs = questionsDiv.querySelectorAll("input");
-      inputs.forEach(input => {
-        const idx = parseInt(input.dataset.index, 10);
-        const val = parseFloat(input.value);
-        if (isNaN(val) || Math.abs(val - currentQuestions[idx].answer) > 0.0001) {
-          wrong++;
-        }
-      });
-
-      lives -= wrong;
-      if (lives < 0) lives = 0;
-      hudLives.textContent = "Liv: " + lives;
-
-      if (lives <= 0) {
-        gameOver();
-        return;
-      }
-
-      quizScreen.style.display = "none";
-      uiLayer.style.display = "none";
-
-      running = true;
-      inQuiz = false;
-      lastTime = performance.now();
-    });
-
-    startBtn.addEventListener("click", () => {
-      grade = parseInt(gradeSelect.value, 10);
-      hudGrade.textContent = "Klasse: " + grade;
-      hudScore.textContent = "Score: 0";
-      hudLives.textContent = "Liv: 3";
-      hudKills.textContent = "Kills: 0";
-
-      uiLayer.style.display = "none";
-      startScreen.style.display = "none";
-      quizScreen.style.display = "none";
-      gameOverScreen.style.display = "none";
-      hudTop.style.display = "flex";
-      hudBottomLeft.style.display = "block";
-
-      resetGame();
-      running = true;
-      inQuiz = false;
-      lastTime = performance.now();
-    });
-
-    restartBtn.addEventListener("click", () => {
-      startScreen.style.display = "block";
-      gameOverScreen.style.display = "none";
-      uiLayer.style.display = "flex";
-    });
-
-    startScreen.style.display = "block";
-    uiLayer.style.display = "flex";
-
     requestAnimationFrame(loop);
-  </script>
+}
+
+function generateQuestion(){
+    let a,b,op,answer;
+    if(grade<=2){
+        a=Math.floor(Math.random()*10);
+        b=Math.floor(Math.random()*10);
+        op=Math.random()<0.5?"+":"-";
+    } else {
+        a=Math.floor(Math.random()*50);
+        b=Math.floor(Math.random()*50);
+        op=["+","-","*"][Math.floor(Math.random()*3)];
+    }
+    if(op==="+") answer=a+b;
+    if(op==="-") answer=a-b;
+    if(op==="*") answer=a*b;
+    return {text:`${a} ${op} ${b} = ?`,answer};
+}
+
+let currentQuestions=[];
+
+function startQuiz(){
+    inQuiz=true;
+    running=false;
+    questionsDiv.innerHTML="";
+    currentQuestions=[];
+    for(let i=0;i<3;i++){
+        const q=generateQuestion();
+        currentQuestions.push(q);
+        questionsDiv.innerHTML+=`
+            <div>${i+1}. ${q.text}</div>
+            <input type="number" data-i="${i}">
+        `;
+    }
+    quizScreen.style.display="block";
+    uiLayer.style.display="flex";
+}
+
+submitQuizBtn.onclick=()=>{
+    let wrong=0;
+    document.querySelectorAll("#questions input").forEach(inp=>{
+        const i=inp.dataset.i;
+        if(Number(inp.value)!==currentQuestions[i].answer) wrong++;
+    });
+    lives-=wrong;
+    hudLives.textContent="Liv: "+lives;
+    if(lives<=0){ gameOver(); return; }
+    quizScreen.style.display="none";
+    uiLayer.style.display="none";
+    inQuiz=false;
+    running=true;
+};
+
+startBtn.onclick=()=>{
+    grade=Number(gradeSelect.value);
+    hudGrade.textContent="Klasse: "+grade;
+    hudTop.style.display="flex";
+    hudBottomLeft.style.display="block";
+    startScreen.style.display="none";
+    uiLayer.style.display="none";
+    resetGame();
+    running=true;
+};
+
+restartBtn.onclick=()=>{
+    gameOverScreen.style.display="none";
+    startScreen.style.display="block";
+};
+
+function gameOver(){
+    running=false;
+    inQuiz=false;
+    gameOverText.textContent=`Du fik ${kills} kills og score ${score}.`;
+    gameOverScreen.style.display="block";
+    uiLayer.style.display="flex";
+}
+
+startScreen.style.display="block";
+uiLayer.style.display="flex";
+
+requestAnimationFrame(loop);
+</script>
+
 </body>
 </html>
