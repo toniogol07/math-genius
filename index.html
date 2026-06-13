@@ -2,7 +2,7 @@
 <html lang="da">
 <head>
 <meta charset="UTF-8">
-<title>Neon Alien Raid – Endless FIXED</title>
+<title>Neon Alien Raid – Endless Neon Edition</title>
 <style>
   html, body {
     margin: 0; padding: 0;
@@ -12,13 +12,19 @@
     font-family: system-ui, sans-serif;
     color: #fff;
   }
-  canvas { display: block; width: 100vw; height: 100vh; }
+
+  canvas {
+    display: block;
+    width: 100vw;
+    height: 100vh;
+  }
 
   #uiLayer {
     position: absolute; inset: 0;
     display: flex; align-items: center; justify-content: center;
     pointer-events: none;
   }
+
   #startScreen, #quizScreen, #gameOverScreen {
     pointer-events: auto;
     background: rgba(10,10,30,0.95);
@@ -30,6 +36,7 @@
     display: none;
     width: 350px;
   }
+
   button {
     width: 100%; padding: 10px 0;
     border-radius: 999px; border: none;
@@ -37,21 +44,25 @@
     font-weight: 700; cursor: pointer;
     margin-top: 10px;
   }
+
   #hudTop {
     position: absolute; top: 10px; left: 50%;
     transform: translateX(-50%);
     display: flex; gap: 16px;
     pointer-events: none;
   }
+
   #hudTop span {
     padding: 4px 10px; border-radius: 999px;
     background: rgba(0,0,0,0.5);
     border: 1px solid #00ffff55;
   }
+
   #hudBottomLeft {
     position: absolute; left: 16px; bottom: 12px;
     pointer-events: none;
   }
+
   #hudBottomLeft .box {
     background: rgba(0,0,0,0.6);
     border: 1px solid #00ffff55;
@@ -68,7 +79,7 @@
 <div id="uiLayer">
   <div id="startScreen">
     <h1>NEON ALIEN RAID</h1>
-    <p>Endeløst skydespil med matematik‑quiz.</p>
+    <p>Endeløst neon‑skydespil med matematik‑quiz.</p>
     <label for="gradeSelect">Klassetrin:</label>
     <select id="gradeSelect">
       <option value="1">1. klasse</option>
@@ -169,6 +180,7 @@ let lives = 3;
 let kills = 0;
 let score = 0;
 
+// ⭐ Neon Player
 const player = {
   x: 0, y: 0, w: 32, h: 60,
   vx: 0, vy: 0,
@@ -195,7 +207,7 @@ function clampPlayer() {
   if (player.x + player.w > canvas.width) player.x = canvas.width - player.w;
 }
 
-// Platforme inkl. spawn‑platforme udenfor banen
+// ⭐ Neon Platforms + Spawn Platforms
 function createPlatforms() {
   const g = canvas.height - 80;
   platforms = [
@@ -204,164 +216,152 @@ function createPlatforms() {
     { x: canvas.width * 0.4, y: g - 230, w: 200, h: 20 },
     { x: canvas.width * 0.72, y: g - 170, w: 180, h: 20 },
 
-    // Spawn‑platforme udenfor banen
+    // ⭐ Spawn-platforme udenfor banen
     { x: -250, y: g - 40, w: 250, h: 20 },
     { x: canvas.width, y: g - 40, w: 250, h: 20 }
   ];
 }
+// ⭐ Neon Enemy Drawing
+function drawEnemies() {
+  enemies.forEach(e => {
+    ctx.save();
+    ctx.translate(e.x + e.w/2, e.y + e.h/2);
 
-function updateAmmoHUD() {
-  hudAmmo.innerHTML = reloading
-    ? "<strong>Ammo:</strong> Reloading..."
-    : `<strong>Ammo:</strong> ${ammo} / ${maxAmmo}`;
-}
+    ctx.shadowColor = "#ff00ff";
+    ctx.shadowBlur = 20;
 
-function reload() {
-  if (reloading) return;
-  reloading = true;
-  canShoot = false;
-  updateAmmoHUD();
-  setTimeout(() => {
-    ammo = maxAmmo;
-    reloading = false;
-    canShoot = true;
-    updateAmmoHUD();
-  }, 900);
-}
+    let core = "rgba(255,0,255,1)";
+    if (e.type === "runner") core = "rgba(0,255,0,1)";
+    if (e.type === "shooter") core = "rgba(0,200,255,1)";
+    if (e.type === "tank") core = "rgba(255,120,0,1)";
 
-function shoot() {
-  if (!running || inQuiz || !canShoot || reloading) return;
-  if (ammo <= 0) { reload(); return; }
+    const grad = ctx.createRadialGradient(0,0,0,0,0,26);
+    grad.addColorStop(0, core);
+    grad.addColorStop(1, "rgba(255,0,255,0.1)");
 
-  bullets.push({
-    x: player.x + player.w / 2 + player.facing * 20,
-    y: player.y + player.h / 2,
-    vx: player.facing * 700,
-    vy: 0,
-    w: 12, h: 4,
-    life: 0, maxLife: 1.2
-  });
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.ellipse(0,0,22,28,0,0,Math.PI*2);
+    ctx.fill();
 
-  ammo--;
-  updateAmmoHUD();
-  canShoot = false;
-  setTimeout(() => canShoot = true, 90);
-}
+    // HP bar
+    ctx.fillStyle = "rgba(0,0,0,0.7)";
+    ctx.fillRect(-20, -35, 40, 5);
+    ctx.fillStyle = "#00ff88";
+    ctx.fillRect(-20, -35, 40 * (e.hp / e.maxHp), 5);
 
-// Spawn aliens på siderne
-function spawnEnemy() {
-  const g = canvas.height - 80;
-  const side = Math.random() < 0.5 ? -200 : canvas.width + 200;
-
-  const r = Math.random();
-  let type = "grunt";
-  if (r > 0.6 && r <= 0.8) type = "runner";
-  else if (r > 0.8 && r <= 0.93) type = "shooter";
-  else if (r > 0.93) type = "tank";
-
-  const baseSpeed = 40 + grade * 8 + kills * 0.3;
-  let hp = 30 + grade * 6 + kills * 0.4;
-  let speedMul = 1;
-
-  if (type === "runner") { speedMul = 2; hp *= 0.7; }
-  if (type === "tank") { speedMul = 0.6; hp *= 2.5; }
-
-  enemies.push({
-    x: side,
-    y: g - 60,
-    w: 32, h: 50,
-    vx: side < 0 ? baseSpeed * speedMul : -baseSpeed * speedMul,
-    vy: 0,
-    type,
-    hp,
-    maxHp: hp,
-    shootCooldown: 1 + Math.random() * 1.5
+    ctx.restore();
   });
 }
 
-function resetGame() {
-  createPlatforms();
-  player.x = canvas.width / 2;
-  player.y = canvas.height - 200;
-  player.vx = 0; player.vy = 0;
-  bullets = []; enemies = []; enemyBullets = [];
-  lives = 3; kills = 0; score = 0;
-  ammo = maxAmmo; reloading = false; canShoot = true;
-  spawnTimer = 0;
+// ⭐ Neon Player Drawing
+function drawPlayer() {
+  ctx.save();
+  ctx.translate(player.x + player.w/2, player.y + player.h/2);
+  ctx.scale(player.facing, 1);
 
-  hudLives.textContent = "Liv: " + lives;
-  hudKills.textContent = "Kills: " + kills;
-  hudScore.textContent = "Score: " + score;
-  updateAmmoHUD();
+  ctx.shadowColor = "#00f5ff";
+  ctx.shadowBlur = 20;
+
+  // Body
+  ctx.fillStyle = "#00ffbb";
+  ctx.fillRect(-10, -30, 20, 40);
+
+  // Head
+  ctx.fillStyle = "#00f5ff";
+  ctx.beginPath();
+  ctx.arc(0, -45, 12, 0, Math.PI * 2);
+  ctx.fill();
+
+  // AK‑47
+  ctx.fillStyle = "#ffaa33";
+  ctx.fillRect(5, -25, 32, 6);
+  ctx.fillRect(30, -28, 12, 4);
+
+  ctx.restore();
 }
 
-function loseLife() {
-  lives--;
-  hudLives.textContent = "Liv: " + lives;
-  if (lives <= 0) { gameOver(); return; }
-  player.x = canvas.width / 2;
-  player.y = canvas.height - 200;
-  player.vx = 0; player.vy = 0;
-}
+// ⭐ Neon Bullets
+function drawBullets() {
+  ctx.save();
+  ctx.shadowBlur = 15;
 
-function update(dt) {
-  if (!running || inQuiz) return;
-
-  const move = (keys.d ? 1 : 0) - (keys.a ? 1 : 0);
-  if (move !== 0) player.facing = move > 0 ? 1 : -1;
-  player.vx = move * player.speed;
-
-  if (keys.w && player.onGround) {
-    player.vy = -player.jumpPower;
-    player.onGround = false;
-  }
-
-  player.vy += 1400 * dt;
-  player.x += player.vx * dt;
-  player.y += player.vy * dt;
-
-  clampPlayer();
-
-  // Player collision
-  player.onGround = false;
-  for (const p of platforms) {
-    if (player.x < p.x + p.w &&
-        player.x + player.w > p.x &&
-        player.y < p.y + p.h &&
-        player.y + player.h > p.y) {
-      const prevY = player.y - player.vy * dt;
-      if (prevY + player.h <= p.y) {
-        player.y = p.y - player.h;
-        player.vy = 0;
-        player.onGround = true;
-      }
-    }
-  }
-
-  if (player.y > canvas.height + 200) loseLife();
-
+  // Player bullets
+  ctx.shadowColor = "#ffff00";
+  ctx.fillStyle = "#ffff66";
   bullets.forEach(b => {
-    b.x += b.vx * dt;
-    b.life += dt;
+    ctx.fillRect(b.x, b.y, b.w, b.h);
   });
-  bullets = bullets.filter(b => b.life < b.maxLife);
 
-  updateEnemies(dt);
-  updateEnemyBullets(dt);
-  handleCollisions();
+  // Enemy bullets
+  ctx.shadowColor = "#ff0066";
+  ctx.fillStyle = "#ff3366";
+  enemyBullets.forEach(b => {
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+    ctx.fill();
+  });
 
-  // Konstant spawn
-  spawnTimer -= dt;
-  if (spawnTimer <= 0) {
-    spawnEnemy();
-    spawnTimer = Math.max(0.25, 1.2 - (kills * 0.02));
-  }
-
-  if (kills > 0 && kills % 20 === 0 && !inQuiz) {
-    startQuiz();
-  }
+  ctx.restore();
 }
 
+// ⭐ Neon Platforms
+function drawPlatforms() {
+  ctx.save();
+  ctx.shadowColor = "#00f5ff";
+  ctx.shadowBlur = 15;
+  ctx.fillStyle = "rgba(0,255,255,0.3)";
+  platforms.forEach(p => ctx.fillRect(p.x, p.y, p.w, p.h));
+  ctx.restore();
+}
+
+// ⭐ Neon Background
+function drawBackground() {
+  const w = canvas.width;
+  const h = canvas.height;
+
+  const grad = ctx.createRadialGradient(
+    w/2, h/2, 0,
+    w/2, h/2, Math.max(w,h)
+  );
+  grad.addColorStop(0, "#050816");
+  grad.addColorStop(0.5, "#02030a");
+  grad.addColorStop(1, "#000000");
+
+  ctx.fillStyle = grad;
+  ctx.fillRect(0,0,w,h);
+
+  // Neon grid
+  ctx.save();
+  ctx.globalAlpha = 0.12;
+  ctx.strokeStyle = "#0ff";
+  ctx.lineWidth = 1;
+  const grid = 80;
+  for (let x = 0; x < w; x += grid) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, h);
+    ctx.stroke();
+  }
+  for (let y = 0; y < h; y += grid) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(w, y);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+// ⭐ DRAW EVERYTHING
+function draw() {
+  drawBackground();
+  drawPlatforms();
+  drawEnemies();
+  drawBullets();
+  drawPlayer();
+}
+
+// ⭐ ENEMY UPDATE (with spawn-platform collision)
 function updateEnemies(dt) {
   enemies.forEach(e => {
     const dir = player.x > e.x ? 1 : -1;
@@ -370,7 +370,7 @@ function updateEnemies(dt) {
 
     e.x += e.vx * dt;
 
-    // Aliens står på platforme (inkl. dem udenfor banen)
+    // Collision with ALL platforms (including spawn platforms)
     for (const p of platforms) {
       if (e.x < p.x + p.w &&
           e.x + e.w > p.x &&
@@ -380,6 +380,7 @@ function updateEnemies(dt) {
       }
     }
 
+    // Shooting
     e.shootCooldown -= dt;
     if (e.type === "shooter" || e.type === "tank") {
       if (e.shootCooldown <= 0) {
@@ -389,10 +390,10 @@ function updateEnemies(dt) {
           const dy = player.y - e.y;
           const d = Math.hypot(dx, dy) || 1;
           enemyBullets.push({
-            x: e.x + e.w / 2,
-            y: e.y + e.h / 2,
-            vx: (dx / d) * (200 + grade * 20),
-            vy: (dy / d) * (200 + grade * 20),
+            x: e.x + e.w/2,
+            y: e.y + e.h/2,
+            vx: (dx/d) * (200 + grade * 20),
+            vy: (dy/d) * (200 + grade * 20),
             r: e.type === "tank" ? 7 : 5,
             life: 0,
             maxLife: 2
@@ -403,6 +404,7 @@ function updateEnemies(dt) {
   });
 }
 
+// ⭐ ENEMY BULLETS UPDATE
 function updateEnemyBullets(dt) {
   enemyBullets.forEach(b => {
     b.x += b.vx * dt;
@@ -412,6 +414,7 @@ function updateEnemyBullets(dt) {
   enemyBullets = enemyBullets.filter(b => b.life < b.maxLife);
 }
 
+// ⭐ COLLISIONS
 function handleCollisions() {
   // Player bullets vs enemies
   bullets.forEach(b => {
@@ -446,56 +449,20 @@ function handleCollisions() {
   });
 }
 
-// Drawing
-function draw() {
-  ctx.fillStyle = "#000";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  // Platforms
-  ctx.fillStyle = "#00ffff33";
-  platforms.forEach(p => ctx.fillRect(p.x, p.y, p.w, p.h));
-
-  // Enemies
-  enemies.forEach(e => {
-    ctx.fillStyle = "magenta";
-    ctx.fillRect(e.x, e.y, e.w, e.h);
-  });
-
-  // Bullets
-  bullets.forEach(b => {
-    ctx.fillStyle = "yellow";
-    ctx.fillRect(b.x, b.y, b.w, b.h);
-  });
-
-  enemyBullets.forEach(b => {
-    ctx.fillStyle = "red";
-    ctx.beginPath();
-    ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
-    ctx.fill();
-  });
-
-  // Player
-  ctx.save();
-  ctx.translate(player.x + player.w / 2, player.y + player.h / 2);
-  ctx.scale(player.facing, 1);
-  ctx.fillStyle = "#00ffbb";
-  ctx.fillRect(-10, -30, 20, 40);
-  ctx.fillStyle = "#ffaa33";
-  ctx.fillRect(5, -25, 32, 6);
-  ctx.restore();
-}
-
+// ⭐ GAME LOOP
 function loop(t) {
   const dt = (t - last) / 1000;
   last = t;
+
   if (running && !inQuiz) {
     update(dt);
     draw();
   }
+
   requestAnimationFrame(loop);
 }
 
-// Quiz
+// ⭐ QUIZ SYSTEM
 let currentQuestions = [];
 
 function generateQuestion() {
@@ -511,6 +478,7 @@ function startQuiz() {
   running = false;
   questionsDiv.innerHTML = "";
   currentQuestions = [];
+
   for (let i = 0; i < 3; i++) {
     const q = generateQuestion();
     currentQuestions.push(q);
@@ -519,6 +487,7 @@ function startQuiz() {
       <input type="number" data-i="${i}">
     `;
   }
+
   quizScreen.style.display = "block";
   uiLayer.style.display = "flex";
 }
@@ -530,16 +499,19 @@ submitQuizBtn.onclick = () => {
     const i = Number(inp.dataset.i);
     if (Number(inp.value) !== currentQuestions[i].answer) wrong++;
   });
+
   lives -= wrong;
   hudLives.textContent = "Liv: " + lives;
+
   if (lives <= 0) { gameOver(); return; }
+
   quizScreen.style.display = "none";
   uiLayer.style.display = "none";
   inQuiz = false;
   running = true;
 };
 
-// Start / restart / game over
+// ⭐ START / RESTART / GAME OVER
 startBtn.onclick = () => {
   grade = Number(gradeSelect.value);
   hudGrade.textContent = "Klasse: " + grade;
@@ -565,11 +537,11 @@ function gameOver() {
   uiLayer.style.display = "flex";
 }
 
-// Init
+// ⭐ INIT
 startScreen.style.display = "block";
 uiLayer.style.display = "flex";
 requestAnimationFrame(loop);
-</script>
 
+</script>
 </body>
 </html>
