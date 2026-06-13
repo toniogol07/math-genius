@@ -2,7 +2,7 @@
 <html lang="da">
 <head>
   <meta charset="UTF-8">
-  <title>Neon Arena Shooter</title>
+  <title>Neon Alien Raid</title>
   <style>
     html, body {
       margin: 0;
@@ -30,15 +30,17 @@
       pointer-events: none;
     }
 
-    #startScreen {
+    #startScreen, #quizScreen, #gameOverScreen {
       pointer-events: auto;
-      background: rgba(10, 10, 30, 0.9);
+      background: rgba(10, 10, 30, 0.95);
       border-radius: 20px;
       padding: 24px 32px;
       box-shadow: 0 0 40px rgba(0, 255, 255, 0.3);
       border: 2px solid rgba(0, 255, 255, 0.6);
       text-align: center;
       min-width: 320px;
+      max-width: 420px;
+      display: none;
     }
 
     #startScreen h1 {
@@ -54,7 +56,7 @@
       color: #a8b3ff;
     }
 
-    #startScreen label {
+    label {
       display: block;
       margin-bottom: 6px;
       font-weight: 600;
@@ -63,7 +65,7 @@
       color: #8fd5ff;
     }
 
-    #gradeSelect {
+    select, input[type="number"] {
       width: 100%;
       padding: 8px 10px;
       border-radius: 10px;
@@ -72,10 +74,11 @@
       color: #fff;
       font-size: 14px;
       outline: none;
+      margin-bottom: 10px;
     }
 
-    #startBtn {
-      margin-top: 16px;
+    button {
+      margin-top: 10px;
       width: 100%;
       padding: 10px 0;
       border-radius: 999px;
@@ -90,7 +93,7 @@
       box-shadow: 0 0 20px rgba(0, 255, 255, 0.6);
     }
 
-    #startBtn:hover {
+    button:hover {
       filter: brightness(1.1);
       transform: translateY(-1px);
     }
@@ -101,7 +104,7 @@
       left: 50%;
       transform: translateX(-50%);
       display: flex;
-      gap: 20px;
+      gap: 16px;
       font-size: 14px;
       text-shadow: 0 0 8px rgba(0,0,0,0.8);
       pointer-events: none;
@@ -114,16 +117,15 @@
       border: 1px solid rgba(0, 255, 255, 0.4);
     }
 
-    #hudBottomRight {
+    #hudBottomLeft {
       position: absolute;
-      right: 16px;
+      left: 16px;
       bottom: 12px;
       font-size: 14px;
-      text-align: right;
       pointer-events: none;
     }
 
-    #hudBottomRight .box {
+    #hudBottomLeft .box {
       display: inline-block;
       padding: 6px 10px;
       border-radius: 10px;
@@ -133,8 +135,28 @@
       min-width: 140px;
     }
 
-    #hudBottomRight strong {
+    #hudBottomLeft strong {
       color: #00f5ff;
+    }
+
+    .question {
+      margin: 10px 0;
+      text-align: left;
+      font-size: 15px;
+    }
+
+    .question input {
+      margin-top: 4px;
+    }
+
+    #quizScreen h2 {
+      margin-top: 0;
+      margin-bottom: 8px;
+    }
+
+    #gameOverScreen h2 {
+      margin-top: 0;
+      margin-bottom: 8px;
     }
   </style>
 </head>
@@ -143,8 +165,8 @@
 
   <div id="uiLayer">
     <div id="startScreen">
-      <h1>NEON ARENA</h1>
-      <p>2D top‑down skydespil – sværhedsgrad følger klassetrin.</p>
+      <h1>NEON ALIEN RAID</h1>
+      <p>2D neon alien skydespil med bølger og matematik‑quiz.</p>
 
       <label for="gradeSelect">Vælg klassetrin (1.–9. klasse)</label>
       <select id="gradeSelect">
@@ -161,18 +183,31 @@
 
       <button id="startBtn">Start spil</button>
     </div>
+
+    <div id="quizScreen">
+      <h2>Matematik‑runde</h2>
+      <p>Besvar de 3 regnestykker for at gå videre. Forkert svar = du mister 1 liv.</p>
+      <div id="questions"></div>
+      <button id="submitQuizBtn">Fortsæt</button>
+    </div>
+
+    <div id="gameOverScreen">
+      <h2>Game Over</h2>
+      <p id="gameOverText"></p>
+      <button id="restartBtn">Spil igen</button>
+    </div>
   </div>
 
   <div id="hudTop" style="display:none;">
     <span id="hudGrade">Klasse: -</span>
-    <span id="hudWave">Bølge: 1</span>
+    <span id="hudWave">Wave: 1</span>
+    <span id="hudLives">Liv: 3</span>
     <span id="hudScore">Score: 0</span>
-    <span id="hudHP">HP: 100</span>
   </div>
 
-  <div id="hudBottomRight" style="display:none;">
-    <div class="box" id="hudAmmo"><strong>Ammo:</strong> 12 / 12</div>
-    <div class="box" id="hudInfo"><strong>Tip:</strong> WASD bevægelse, SPACE skyder.</div>
+  <div id="hudBottomLeft" style="display:none;">
+    <div class="box" id="hudAmmo"><strong>Ammo:</strong> 30 / 30</div>
+    <div class="box" id="hudInfo"><strong>Styring:</strong> A/D = gå, W = hop, SPACE = skyd.</div>
   </div>
 
   <script>
@@ -188,65 +223,72 @@
 
     const uiLayer = document.getElementById("uiLayer");
     const startScreen = document.getElementById("startScreen");
+    const quizScreen = document.getElementById("quizScreen");
+    const gameOverScreen = document.getElementById("gameOverScreen");
     const gradeSelect = document.getElementById("gradeSelect");
     const startBtn = document.getElementById("startBtn");
+    const submitQuizBtn = document.getElementById("submitQuizBtn");
+    const restartBtn = document.getElementById("restartBtn");
+    const questionsDiv = document.getElementById("questions");
+    const gameOverText = document.getElementById("gameOverText");
 
     const hudTop = document.getElementById("hudTop");
     const hudGrade = document.getElementById("hudGrade");
     const hudWave = document.getElementById("hudWave");
+    const hudLives = document.getElementById("hudLives");
     const hudScore = document.getElementById("hudScore");
-    const hudHP = document.getElementById("hudHP");
-    const hudBottomRight = document.getElementById("hudBottomRight");
+    const hudBottomLeft = document.getElementById("hudBottomLeft");
     const hudAmmo = document.getElementById("hudAmmo");
-    const hudInfo = document.getElementById("hudInfo");
-    const keys = { w:false, a:false, s:false, d:false, space:false };
+
+    const keys = { a:false, d:false, w:false, space:false };
 
     window.addEventListener("keydown", e => {
-      if (e.code === "KeyW") keys.w = true;
       if (e.code === "KeyA") keys.a = true;
-      if (e.code === "KeyS") keys.s = true;
       if (e.code === "KeyD") keys.d = true;
+      if (e.code === "KeyW") keys.w = true;
       if (e.code === "Space") {
+        if (!keys.space) tryShoot();
         keys.space = true;
-        tryShoot();
       }
     });
 
     window.addEventListener("keyup", e => {
-      if (e.code === "KeyW") keys.w = false;
       if (e.code === "KeyA") keys.a = false;
-      if (e.code === "KeyS") keys.s = false;
       if (e.code === "KeyD") keys.d = false;
+      if (e.code === "KeyW") keys.w = false;
       if (e.code === "Space") keys.space = false;
     });
 
     let running = false;
+    let inQuiz = false;
     let lastTime = 0;
 
     const player = {
       x: 0,
       y: 0,
-      r: 16,
+      w: 32,
+      h: 60,
+      vx: 0,
+      vy: 0,
       speed: 260,
-      hp: 100,
-      maxHp: 100
+      jumpPower: 520,
+      onGround: false,
+      facing: 1
     };
-
-    let moveAngle = 0;
-    let lastMoveAngle = 0;
 
     let bullets = [];
     let enemies = [];
     let enemyBullets = [];
-    let particles = [];
+    let platforms = [];
 
     let score = 0;
     let wave = 1;
     let grade = 5;
+    let lives = 3;
 
     let fireCooldown = 0;
-    let ammo = 12;
-    let maxAmmo = 12;
+    let ammo = 30;
+    let maxAmmo = 30;
     let canShoot = true;
     let reloading = false;
 
@@ -268,26 +310,27 @@
         reloading = false;
         canShoot = true;
         updateAmmoHUD();
-      }, 1000);
+      }, 900);
     }
 
     function tryShoot() {
-      if (!running) return;
+      if (!running || inQuiz) return;
       if (!canShoot || reloading) return;
       if (ammo <= 0) {
         reloadWeapon();
         return;
       }
 
-      const angle = lastMoveAngle;
-      const speed = 520;
+      const speed = 600;
+      const dir = player.facing;
 
       bullets.push({
-        x: player.x,
-        y: player.y,
-        vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed,
-        r: 4,
+        x: player.x + player.w/2 + dir * 20,
+        y: player.y + player.h/2 - 10,
+        vx: dir * speed,
+        vy: 0,
+        w: 10,
+        h: 4,
         life: 0,
         maxLife: 1.2
       });
@@ -298,61 +341,64 @@
       fireCooldown = 0.12;
     }
 
-    function spawnEnemy() {
-      const margin = 60;
-      let x, y;
+    function createPlatforms() {
+      const groundY = canvas.height - 80;
+      platforms = [
+        { x: 0, y: groundY, w: canvas.width, h: 40 },
+        { x: canvas.width * 0.15, y: groundY - 140, w: 160, h: 20 },
+        { x: canvas.width * 0.45, y: groundY - 200, w: 180, h: 20 },
+        { x: canvas.width * 0.75, y: groundY - 130, w: 160, h: 20 }
+      ];
+    }
 
-      if (Math.random() < 0.5) {
-        x = -margin; // venstre
-      } else {
-        x = canvas.width + margin; // højre
-      }
-      y = Math.random() * canvas.height;
+    function spawnEnemy() {
+      const groundY = canvas.height - 80;
+      const side = Math.random() < 0.5 ? -60 : canvas.width + 60;
+      const typeRoll = Math.random();
+      let type = "grunt";
+      if (typeRoll > 0.7) type = "runner";
+      if (typeRoll > 0.9) type = "shooter";
 
       const baseSpeed = 60 + grade * 10;
-      const hp = 10 + grade * 2;
-      const shootChance = 0.001 + grade * 0.0004;
+      const hp = 20 + grade * 5;
 
       enemies.push({
-        x, y,
-        r: 14,
+        x: side,
+        y: groundY - 60,
+        w: 32,
+        h: 50,
+        vx: side < 0 ? (40 + Math.random()*40) : -(40 + Math.random()*40),
+        type,
         speed: baseSpeed,
         hp,
         maxHp: hp,
-        shootChance
+        shootCooldown: 1 + Math.random()
       });
     }
 
-    function spawnExplosion(x, y, color) {
-      for (let i = 0; i < 12; i++) {
-        const angle = Math.random() * Math.PI * 2;
-        const speed = 80 + Math.random() * 120;
-        particles.push({
-          x, y,
-          vx: Math.cos(angle) * speed,
-          vy: Math.sin(angle) * speed,
-          life: 0,
-          maxLife: 0.6 + Math.random() * 0.4,
-          color
-        });
-      }
+    function startWave() {
+      enemies = [];
+      enemyBullets = [];
+      const count = 3 + wave + Math.floor(grade * 0.8);
+      for (let i = 0; i < count; i++) spawnEnemy();
     }
 
     function resetGame() {
-      player.x = canvas.width / 2;
-      player.y = canvas.height / 2;
-      player.hp = player.maxHp;
-
-      moveAngle = 0;
-      lastMoveAngle = 0;
+      createPlatforms();
+      player.x = canvas.width / 2 - 50;
+      player.y = canvas.height - 200;
+      player.vx = 0;
+      player.vy = 0;
+      player.onGround = false;
+      player.facing = 1;
 
       bullets = [];
       enemies = [];
       enemyBullets = [];
-      particles = [];
 
       score = 0;
       wave = 1;
+      lives = 3;
 
       ammo = maxAmmo;
       reloading = false;
@@ -360,67 +406,59 @@
       updateAmmoHUD();
 
       hudScore.textContent = "Score: " + score;
-      hudWave.textContent = "Bølge: " + wave;
-      hudHP.textContent = "HP: " + player.hp;
+      hudWave.textContent = "Wave: " + wave;
+      hudLives.textContent = "Liv: " + lives;
     }
 
-    function difficultySpawnRate() {
-      const base = 1.4;
-      const min = 0.35;
-      const factor = (grade - 1) / 8;
-      return base - factor * (base - min);
-    }
-
-    function difficultyEnemyCount() {
-      return 4 + Math.floor(grade * 1.2) + wave;
-    }
-
-    function difficultyEnemyShootMultiplier() {
-      return 1 + (grade - 1) * 0.25;
-    }
-
-    let spawnTimer = 0;
-    let targetEnemies = 0;
-
-    function startWave() {
-      targetEnemies = difficultyEnemyCount();
-      spawnTimer = 0;
+    function difficultyEnemyShootChance() {
+      return 0.15 + grade * 0.05 + wave * 0.03;
     }
 
     function update(dt) {
-      if (!running) return;
+      if (!running || inQuiz) return;
 
       const moveX = (keys.d ? 1 : 0) - (keys.a ? 1 : 0);
-      const moveY = (keys.s ? 1 : 0) - (keys.w ? 1 : 0);
-
-      if (moveX !== 0 || moveY !== 0) {
-        moveAngle = Math.atan2(moveY, moveX);
-        lastMoveAngle = moveAngle;
+      if (moveX !== 0) {
+        player.facing = moveX > 0 ? 1 : -1;
       }
 
-      const len = Math.hypot(moveX, moveY) || 1;
-      const nx = moveX / len;
-      const ny = moveY / len;
+      player.vx = moveX * player.speed;
 
-      player.x += nx * player.speed * dt;
-      player.y += ny * player.speed * dt;
+      if (keys.w && player.onGround) {
+        player.vy = -player.jumpPower;
+        player.onGround = false;
+      }
 
-      const margin = 30;
-      player.x = Math.max(margin, Math.min(canvas.width - margin, player.x));
-      player.y = Math.max(margin, Math.min(canvas.height - margin, player.y));
+      player.vy += 1400 * dt;
+
+      player.x += player.vx * dt;
+      player.y += player.vy * dt;
+
+      player.onGround = false;
+      for (const p of platforms) {
+        if (player.x < p.x + p.w &&
+            player.x + player.w > p.x &&
+            player.y < p.y + p.h &&
+            player.y + player.h > p.y) {
+
+          const prevY = player.y - player.vy * dt;
+          if (prevY + player.h <= p.y) {
+            player.y = p.y - player.h;
+            player.vy = 0;
+            player.onGround = true;
+          }
+        }
+      }
+
+      if (player.y > canvas.height + 200) {
+        loseLife();
+      }
 
       if (!canShoot) {
         fireCooldown -= dt;
         if (fireCooldown <= 0) {
           canShoot = true;
         }
-      }
-
-      spawnTimer += dt;
-      const spawnRate = difficultySpawnRate();
-      if (spawnTimer > spawnRate && enemies.length < targetEnemies) {
-        spawnTimer = 0;
-        spawnEnemy();
       }
 
       bullets.forEach(b => {
@@ -431,27 +469,33 @@
       bullets = bullets.filter(b => b.life < b.maxLife);
 
       enemies.forEach(e => {
-        const dx = player.x - e.x;
-        const dy = player.y - e.y;
-        const dist = Math.hypot(dx, dy) || 1;
-        const ex = dx / dist;
-        const ey = dy / dist;
+        const dir = player.x > e.x ? 1 : -1;
+        e.vx = dir * e.speed * 0.6;
+        e.x += e.vx * dt;
 
-        e.x += ex * e.speed * dt;
-        e.y += ey * e.speed * dt;
+        const groundY = canvas.height - 80;
+        e.y = groundY - e.h;
 
-        const shootRoll = Math.random() * difficultyEnemyShootMultiplier();
-        if (shootRoll < e.shootChance * dt * 60) {
-          const speed = 260 + grade * 10;
-          enemyBullets.push({
-            x: e.x,
-            y: e.y,
-            vx: ex * speed,
-            vy: ey * speed,
-            r: 4,
-            life: 0,
-            maxLife: 2
-          });
+        if (e.type === "shooter") {
+          e.shootCooldown -= dt;
+          if (e.shootCooldown <= 0) {
+            e.shootCooldown = 1.5 + Math.random();
+            if (Math.random() < difficultyEnemyShootChance()) {
+              const speed = 260 + grade * 10;
+              const dx = player.x + player.w/2 - (e.x + e.w/2);
+              const dy = player.y + player.h/2 - (e.y + e.h/2);
+              const dist = Math.hypot(dx, dy) || 1;
+              enemyBullets.push({
+                x: e.x + e.w/2,
+                y: e.y + e.h/2,
+                vx: dx / dist * speed,
+                vy: dy / dist * speed,
+                r: 5,
+                life: 0,
+                maxLife: 2
+              });
+            }
+          }
         }
       });
 
@@ -462,27 +506,17 @@
       });
       enemyBullets = enemyBullets.filter(b => b.life < b.maxLife);
 
-      particles.forEach(p => {
-        p.x += p.vx * dt;
-        p.y += p.vy * dt;
-        p.vx *= 0.96;
-        p.vy *= 0.96;
-        p.life += dt;
-      });
-      particles = particles.filter(p => p.life < p.maxLife);
-
       bullets.forEach(b => {
         enemies.forEach(e => {
-          const dx = e.x - b.x;
-          const dy = e.y - b.y;
-          const dist = Math.hypot(dx, dy);
-          if (dist < e.r + b.r) {
+          if (b.x < e.x + e.w &&
+              b.x + b.w > e.x &&
+              b.y < e.y + e.h &&
+              b.y + b.h > e.y) {
             b.life = b.maxLife;
-            e.hp -= 10 + grade;
+            e.hp -= 20 + grade * 3;
             if (e.hp <= 0) {
-              spawnExplosion(e.x, e.y, "rgba(0,255,255,");
               e.dead = true;
-              score += 10 + grade * 2;
+              score += 10 + wave * 2 + grade;
               hudScore.textContent = "Score: " + score;
             }
           }
@@ -491,27 +525,34 @@
       enemies = enemies.filter(e => !e.dead);
 
       enemyBullets.forEach(b => {
-        const dx = player.x - b.x;
-        const dy = player.y - b.y;
-        const dist = Math.hypot(dx, dy);
-        if (dist < player.r + b.r) {
+        if (b.x > player.x &&
+            b.x < player.x + player.w &&
+            b.y > player.y &&
+            b.y < player.y + player.h) {
           b.life = b.maxLife;
-          player.hp -= 8 + grade * 2;
-          hudHP.textContent = "HP: " + Math.max(0, Math.floor(player.hp));
-          spawnExplosion(player.x, player.y, "rgba(255,0,120,");
-          if (player.hp <= 0) {
-            gameOver();
-          }
+          loseLife();
         }
       });
 
-      if (enemies.length === 0 && targetEnemies > 0) {
-        wave++;
-        hudWave.textContent = "Bølge: " + wave;
-        startWave();
+      if (enemies.length === 0) {
+        startQuiz();
       }
     }
-    function drawNeonBackground() {
+
+    function loseLife() {
+      lives--;
+      hudLives.textContent = "Liv: " + lives;
+      if (lives <= 0) {
+        gameOver();
+      } else {
+        player.x = canvas.width / 2 - 50;
+        player.y = canvas.height - 200;
+        player.vx = 0;
+        player.vy = 0;
+      }
+    }
+
+    function drawBackground() {
       const w = canvas.width;
       const h = canvas.height;
 
@@ -545,50 +586,60 @@
       ctx.restore();
     }
 
-    function drawPlayer() {
-      const angle = (keys.w || keys.a || keys.s || keys.d) ? moveAngle : lastMoveAngle;
-
+    function drawPlatforms() {
       ctx.save();
-      ctx.translate(player.x, player.y);
-      ctx.rotate(angle);
+      ctx.shadowColor = "#00f5ff";
+      ctx.shadowBlur = 15;
+      ctx.fillStyle = "rgba(0,255,255,0.3)";
+      platforms.forEach(p => {
+        ctx.fillRect(p.x, p.y, p.w, p.h);
+      });
+      ctx.restore();
+    }
+
+    function drawPlayer() {
+      ctx.save();
+      ctx.translate(player.x + player.w/2, player.y + player.h/2);
+      ctx.scale(player.facing, 1);
 
       ctx.shadowColor = "#00f5ff";
       ctx.shadowBlur = 20;
 
       ctx.fillStyle = "#00ffbb";
-      ctx.fillRect(-10, -20, 20, 40);
+      ctx.fillRect(-10, -30, 20, 40);
 
       ctx.fillStyle = "#00f5ff";
       ctx.beginPath();
-      ctx.arc(0, -25, 12, 0, Math.PI * 2);
+      ctx.arc(0, -40, 12, 0, Math.PI * 2);
       ctx.fill();
+
+      ctx.fillStyle = "#ffaa33";
+      ctx.fillRect(5, -25, 30, 6);
+      ctx.fillRect(25, -28, 10, 4);
 
       ctx.restore();
     }
 
     function drawEnemies() {
       enemies.forEach(e => {
-        const t = performance.now() * 0.004;
-        const pulse = 0.6 + 0.4 * Math.sin(t + e.x * 0.01);
-
         ctx.save();
-        ctx.translate(e.x, e.y);
+        ctx.translate(e.x + e.w/2, e.y + e.h/2);
         ctx.shadowColor = "#ff00ff";
         ctx.shadowBlur = 18;
 
-        const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, e.r);
+        const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, 24);
         grad.addColorStop(0, "rgba(255,0,255,1)");
         grad.addColorStop(1, "rgba(255,0,255,0.1)");
         ctx.fillStyle = grad;
         ctx.beginPath();
-        ctx.arc(0, 0, e.r * pulse, 0, Math.PI * 2);
+        ctx.ellipse(0, 0, 20, 26, 0, 0, Math.PI * 2);
         ctx.fill();
 
         ctx.fillStyle = "rgba(0,0,0,0.7)";
-        ctx.fillRect(-e.r, -e.r - 10, e.r * 2, 4);
+        ctx.fillRect(-20, -30, 40, 4);
         ctx.fillStyle = "#00ff88";
         const ratio = e.hp / e.maxHp;
-        ctx.fillRect(-e.r, -e.r - 10, e.r * 2 * ratio, 4);
+        ctx.fillRect(-20, -30, 40 * ratio, 4);
 
         ctx.restore();
       });
@@ -601,9 +652,7 @@
       ctx.shadowColor = "#ffff00";
       ctx.fillStyle = "#ffff66";
       bullets.forEach(b => {
-        ctx.beginPath();
-        ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.fillRect(b.x, b.y, b.w, b.h);
       });
 
       ctx.shadowColor = "#ff0066";
@@ -617,19 +666,9 @@
       ctx.restore();
     }
 
-    function drawParticles() {
-      particles.forEach(p => {
-        const alpha = 1 - p.life / p.maxLife;
-        ctx.fillStyle = p.color + alpha + ")";
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, 3 + 4 * alpha, 0, Math.PI * 2);
-        ctx.fill();
-      });
-    }
-
     function draw() {
-      drawNeonBackground();
-      drawParticles();
+      drawBackground();
+      drawPlatforms();
       drawEnemies();
       drawBullets();
       drawPlayer();
@@ -637,11 +676,14 @@
 
     function gameOver() {
       running = false;
-      uiLayer.style.display = "flex";
-      startScreen.style.display = "block";
+      inQuiz = false;
       hudTop.style.display = "none";
-      hudBottomRight.style.display = "none";
-      hudInfo.innerHTML = "<strong>Tip:</strong> Prøv et lavere klassetrin, hvis det er for svært.";
+      hudBottomLeft.style.display = "none";
+      startScreen.style.display = "none";
+      quizScreen.style.display = "none";
+      gameOverScreen.style.display = "block";
+      uiLayer.style.display = "flex";
+      gameOverText.textContent = "Du nåede wave " + wave + " med score " + score + ".";
     }
 
     function loop(timestamp) {
@@ -657,23 +699,139 @@
       requestAnimationFrame(loop);
     }
 
+    function generateQuestionForGrade(grade) {
+      let a, b, op, text, answer;
+
+      if (grade <= 2) {
+        a = Math.floor(Math.random() * 10);
+        b = Math.floor(Math.random() * 10);
+        op = Math.random() < 0.5 ? "+" : "-";
+      } else if (grade <= 4) {
+        a = Math.floor(Math.random() * 30);
+        b = Math.floor(Math.random() * 30);
+        op = ["+","-","*"][Math.floor(Math.random()*3)];
+      } else if (grade <= 6) {
+        op = ["+","-","*","/"][Math.floor(Math.random()*4)];
+        if (op === "/") {
+          b = Math.floor(Math.random() * 9) + 1;
+          answer = Math.floor(Math.random() * 12);
+          a = b * answer;
+        } else {
+          a = Math.floor(Math.random() * 60);
+          b = Math.floor(Math.random() * 60);
+        }
+      } else {
+        op = ["+","-","*","/"][Math.floor(Math.random()*4)];
+        if (op === "/") {
+          b = Math.floor(Math.random() * 12) + 1;
+          answer = Math.floor(Math.random() * 20);
+          a = b * answer;
+        } else {
+          a = Math.floor(Math.random() * 100);
+          b = Math.floor(Math.random() * 100);
+        }
+      }
+
+      if (answer === undefined) {
+        if (op === "+") answer = a + b;
+        if (op === "-") answer = a - b;
+        if (op === "*") answer = a * b;
+        if (op === "/") answer = a / b;
+      }
+
+      text = a + " " + op + " " + b + " = ?";
+      return { text, answer };
+    }
+
+    let currentQuestions = [];
+
+    function startQuiz() {
+      inQuiz = true;
+      running = false;
+
+      currentQuestions = [];
+      questionsDiv.innerHTML = "";
+
+      for (let i = 0; i < 3; i++) {
+        const q = generateQuestionForGrade(grade);
+        currentQuestions.push(q);
+
+        const div = document.createElement("div");
+        div.className = "question";
+        div.innerHTML = `
+          <div>${i+1}. ${q.text}</div>
+          <input type="number" data-index="${i}" />
+        `;
+        questionsDiv.appendChild(div);
+      }
+
+      uiLayer.style.display = "flex";
+      quizScreen.style.display = "block";
+      startScreen.style.display = "none";
+      gameOverScreen.style.display = "none";
+    }
+
+    submitQuizBtn.addEventListener("click", () => {
+      let wrong = 0;
+      const inputs = questionsDiv.querySelectorAll("input");
+      inputs.forEach(input => {
+        const idx = parseInt(input.dataset.index, 10);
+        const val = parseFloat(input.value);
+        if (isNaN(val) || Math.abs(val - currentQuestions[idx].answer) > 0.0001) {
+          wrong++;
+        }
+      });
+
+      lives -= wrong;
+      if (lives < 0) lives = 0;
+      hudLives.textContent = "Liv: " + lives;
+
+      if (lives <= 0) {
+        gameOver();
+        return;
+      }
+
+      quizScreen.style.display = "none";
+      uiLayer.style.display = "none";
+
+      wave++;
+      hudWave.textContent = "Wave: " + wave;
+      startWave();
+
+      running = true;
+      inQuiz = false;
+      lastTime = performance.now();
+    });
+
     startBtn.addEventListener("click", () => {
       grade = parseInt(gradeSelect.value, 10);
-      hudGrade.textContent = "Klasse: " + grade + ".";
-      hudWave.textContent = "Bølge: 1";
+      hudGrade.textContent = "Klasse: " + grade;
+      hudWave.textContent = "Wave: 1";
       hudScore.textContent = "Score: 0";
-      hudHP.textContent = "HP: 100";
+      hudLives.textContent = "Liv: 3";
 
       uiLayer.style.display = "none";
       startScreen.style.display = "none";
+      quizScreen.style.display = "none";
+      gameOverScreen.style.display = "none";
       hudTop.style.display = "flex";
-      hudBottomRight.style.display = "block";
+      hudBottomLeft.style.display = "block";
 
       resetGame();
       startWave();
       running = true;
+      inQuiz = false;
       lastTime = performance.now();
     });
+
+    restartBtn.addEventListener("click", () => {
+      startScreen.style.display = "block";
+      gameOverScreen.style.display = "none";
+      uiLayer.style.display = "flex";
+    });
+
+    startScreen.style.display = "block";
+    uiLayer.style.display = "flex";
 
     requestAnimationFrame(loop);
   </script>
