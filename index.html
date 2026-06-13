@@ -2,7 +2,7 @@
 <html lang="da">
 <head>
   <meta charset="UTF-8">
-  <title>Neon Alien Raid</title>
+  <title>Neon Alien Raid – Endless</title>
   <style>
     html, body {
       margin: 0;
@@ -161,7 +161,7 @@
   <div id="uiLayer">
     <div id="startScreen">
       <h1>NEON ALIEN RAID</h1>
-      <p>2D neon alien skydespil med lange waves og matematik‑quiz.</p>
+      <p>Endeløst 2D neon alien skydespil med matematik‑quiz hver 20. kill.</p>
 
       <label for="gradeSelect">Vælg klassetrin (1.–9. klasse)</label>
       <select id="gradeSelect">
@@ -181,7 +181,7 @@
 
     <div id="quizScreen">
       <h2>Matematik‑runde</h2>
-      <p>Besvar de 3 regnestykker for at gå videre. Forkert svar = du mister 1 liv.</p>
+      <p>Besvar regnestykkerne. Forkert svar = du mister 1 liv, spillet fortsætter.</p>
       <div id="questions"></div>
       <button id="submitQuizBtn">Fortsæt</button>
     </div>
@@ -195,8 +195,8 @@
 
   <div id="hudTop" style="display:none;">
     <span id="hudGrade">Klasse: -</span>
-    <span id="hudWave">Wave: 1</span>
     <span id="hudLives">Liv: 3</span>
+    <span id="hudKills">Kills: 0</span>
     <span id="hudScore">Score: 0</span>
   </div>
 
@@ -229,8 +229,8 @@
 
     const hudTop = document.getElementById("hudTop");
     const hudGrade = document.getElementById("hudGrade");
-    const hudWave = document.getElementById("hudWave");
     const hudLives = document.getElementById("hudLives");
+    const hudKills = document.getElementById("hudKills");
     const hudScore = document.getElementById("hudScore");
     const hudBottomLeft = document.getElementById("hudBottomLeft");
     const hudAmmo = document.getElementById("hudAmmo");
@@ -266,7 +266,7 @@
       vx: 0,
       vy: 0,
       speed: 260,
-      jumpPower: 520,
+      jumpPower: 750, // højere hop
       onGround: false,
       facing: 1
     };
@@ -277,15 +277,17 @@
     let platforms = [];
 
     let score = 0;
-    let wave = 1;
     let grade = 5;
     let lives = 3;
+    let kills = 0;
 
     let fireCooldown = 0;
     let ammo = 30;
     let maxAmmo = 30;
     let canShoot = true;
     let reloading = false;
+
+    let spawnTimer = 0;
 
     function updateAmmoHUD() {
       if (reloading) {
@@ -340,9 +342,9 @@
       const groundY = canvas.height - 80;
       platforms = [
         { x: 0, y: groundY, w: canvas.width, h: 40 },
-        { x: canvas.width * 0.10, y: groundY - 140, w: 180, h: 20 },
-        { x: canvas.width * 0.40, y: groundY - 210, w: 200, h: 20 },
-        { x: canvas.width * 0.72, y: groundY - 150, w: 180, h: 20 }
+        { x: canvas.width * 0.10, y: groundY - 160, w: 180, h: 20 },
+        { x: canvas.width * 0.40, y: groundY - 230, w: 200, h: 20 },
+        { x: canvas.width * 0.72, y: groundY - 170, w: 180, h: 20 }
       ];
     }
 
@@ -357,8 +359,8 @@
       else if (roll > 0.9 && roll <= 0.97) type = "tank";
       else if (roll > 0.97) type = "jumper";
 
-      const baseSpeed = 40 + grade * 8 + wave * 3;
-      let hp = 30 + grade * 6 + wave * 2;
+      const baseSpeed = 40 + grade * 8 + kills * 0.3;
+      let hp = 30 + grade * 6 + kills * 0.4;
       let speedMul = 1;
       let shootCooldown = 1.5 + Math.random();
 
@@ -392,16 +394,6 @@
       });
     }
 
-    function startWave() {
-      enemies = [];
-      enemyBullets = [];
-      const base = 18;                 // højere base
-      const extraByWave = wave * 8;    // skalerer hårdt med wave
-      const extraByGrade = grade * 3;  // sværere ved højere klassetrin
-      const count = base + extraByWave + extraByGrade;
-      for (let i = 0; i < count; i++) spawnEnemy();
-    }
-
     function resetGame() {
       createPlatforms();
       player.x = canvas.width / 2 - 50;
@@ -416,8 +408,9 @@
       enemyBullets = [];
 
       score = 0;
-      wave = 1;
       lives = 3;
+      kills = 0;
+      spawnTimer = 0;
 
       ammo = maxAmmo;
       reloading = false;
@@ -425,12 +418,12 @@
       updateAmmoHUD();
 
       hudScore.textContent = "Score: " + score;
-      hudWave.textContent = "Wave: " + wave;
       hudLives.textContent = "Liv: " + lives;
+      hudKills.textContent = "Kills: " + kills;
     }
 
     function difficultyEnemyShootChance() {
-      return 0.30 + grade * 0.07 + wave * 0.05; // markant mere skydning
+      return 0.20 + grade * 0.05 + kills * 0.003;
     }
 
     function update(dt) {
@@ -491,7 +484,17 @@
       updateEnemyBullets(dt);
       handleCollisions();
 
-      if (enemies.length === 0) {
+      spawnTimer -= dt;
+      if (spawnTimer <= 0) {
+        const baseInterval = 1.2;
+        const minInterval = 0.25;
+        const difficultyFactor = 0.02 * kills + 0.05 * grade;
+        const interval = Math.max(minInterval, baseInterval - difficultyFactor);
+        spawnTimer = interval;
+        spawnEnemy();
+      }
+
+      if (kills > 0 && kills % 20 === 0 && !inQuiz) {
         startQuiz();
       }
     }
@@ -512,7 +515,6 @@
         e.y += e.vy * dt;
         e.onGround = false;
 
-        const groundY = canvas.height - 80;
         for (const p of platforms) {
           if (e.x < p.x + p.w &&
               e.x + e.w > p.x &&
@@ -541,7 +543,7 @@
           if (e.shootCooldown <= 0) {
             e.shootCooldown = (e.type === "tank" ? 2.0 : 1.2) + Math.random();
             if (Math.random() < difficultyEnemyShootChance()) {
-              const speed = 260 + grade * 15 + wave * 8;
+              const speed = 260 + grade * 15 + kills * 2;
               const dx = player.x + player.w/2 - (e.x + e.w/2);
               const dy = player.y + player.h/2 - (e.y + e.h/2);
               const dist = Math.hypot(dx, dy) || 1;
@@ -577,14 +579,16 @@
               b.y < e.y + e.h &&
               b.y + b.h > e.y) {
             b.life = b.maxLife;
-            let dmg = 22 + grade * 3 + wave * 1.5;
+            let dmg = 22 + grade * 3 + kills * 0.5;
             if (e.type === "tank") dmg *= 0.7;
             if (e.type === "runner") dmg *= 1.2;
             e.hp -= dmg;
             if (e.hp <= 0) {
               e.dead = true;
-              score += 15 + wave * 3 + grade * 2;
+              kills++;
+              score += 10 + grade * 2 + Math.floor(kills * 0.5);
               hudScore.textContent = "Score: " + score;
+              hudKills.textContent = "Kills: " + kills;
             }
           }
         });
@@ -601,6 +605,7 @@
         }
       });
     }
+
     function loseLife() {
       lives--;
       hudLives.textContent = "Liv: " + lives;
@@ -751,7 +756,7 @@
       quizScreen.style.display = "none";
       gameOverScreen.style.display = "block";
       uiLayer.style.display = "flex";
-      gameOverText.textContent = "Du nåede wave " + wave + " med score " + score + ".";
+      gameOverText.textContent = "Du fik " + kills + " kills og score " + score + ".";
     }
 
     function loop(timestamp) {
@@ -862,10 +867,6 @@
       quizScreen.style.display = "none";
       uiLayer.style.display = "none";
 
-      wave++;
-      hudWave.textContent = "Wave: " + wave;
-      startWave();
-
       running = true;
       inQuiz = false;
       lastTime = performance.now();
@@ -874,9 +875,9 @@
     startBtn.addEventListener("click", () => {
       grade = parseInt(gradeSelect.value, 10);
       hudGrade.textContent = "Klasse: " + grade;
-      hudWave.textContent = "Wave: 1";
       hudScore.textContent = "Score: 0";
       hudLives.textContent = "Liv: 3";
+      hudKills.textContent = "Kills: 0";
 
       uiLayer.style.display = "none";
       startScreen.style.display = "none";
@@ -886,7 +887,6 @@
       hudBottomLeft.style.display = "block";
 
       resetGame();
-      startWave();
       running = true;
       inQuiz = false;
       lastTime = performance.now();
