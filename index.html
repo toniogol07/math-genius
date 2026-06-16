@@ -2,13 +2,13 @@
 <html lang="da">
 <head>
 <meta charset="UTF-8">
-<title>Neon Alien Raid – Endless Neon Edition</title>
+<title>Neon Alien Raid – Cartoon Soldier Edition</title>
 <style>
   html, body {
     margin: 0; padding: 0;
     width: 100%; height: 100%;
     overflow: hidden;
-    background: radial-gradient(circle at center, #050816 0%, #02030a 60%, #000000 100%);
+    background: #0a0f1f;
     font-family: system-ui, sans-serif;
     color: #fff;
   }
@@ -79,7 +79,7 @@
 <div id="uiLayer">
   <div id="startScreen">
     <h1>NEON ALIEN RAID</h1>
-    <p>Endeløst neon‑skydespil med matematik‑quiz.</p>
+    <p>Endeløst 2D skydespil med matematik‑quiz.</p>
     <label for="gradeSelect">Klassetrin:</label>
     <select id="gradeSelect">
       <option value="1">1. klasse</option>
@@ -180,12 +180,12 @@ let lives = 3;
 let kills = 0;
 let score = 0;
 
-// ⭐ Neon Player
+// ⭐ Cartoon Soldier Player
 const player = {
-  x: 0, y: 0, w: 32, h: 60,
+  x: 0, y: 0, w: 40, h: 70,
   vx: 0, vy: 0,
   speed: 260,
-  jumpPower: 800,
+  jumpPower: 850,
   onGround: false,
   facing: 1
 };
@@ -200,112 +200,60 @@ let maxAmmo = 30;
 let canShoot = true;
 let reloading = false;
 let spawnTimer = 0;
-
-// Clamp player til banen
+// ⭐ Clamp player til banen
 function clampPlayer() {
   if (player.x < 0) player.x = 0;
   if (player.x + player.w > canvas.width) player.x = canvas.width - player.w;
 }
 
-// ⭐ Neon Platforms + Spawn Platforms
+// ⭐ Mario‑agtige platforme + spawn‑platforme
 function createPlatforms() {
   const g = canvas.height - 80;
   platforms = [
     { x: 0, y: g, w: canvas.width, h: 40 },
-    { x: canvas.width * 0.1, y: g - 160, w: 180, h: 20 },
-    { x: canvas.width * 0.4, y: g - 230, w: 200, h: 20 },
-    { x: canvas.width * 0.72, y: g - 170, w: 180, h: 20 },
+    { x: canvas.width * 0.15, y: g - 180, w: 200, h: 20 },
+    { x: canvas.width * 0.45, y: g - 260, w: 220, h: 20 },
+    { x: canvas.width * 0.75, y: g - 180, w: 200, h: 20 },
 
-    // ⭐ Spawn-platforme udenfor banen
-    { x: -250, y: g - 40, w: 250, h: 20 },
-    { x: canvas.width, y: g - 40, w: 250, h: 20 }
+    // Spawn‑platforme udenfor banen
+    { x: -300, y: g - 40, w: 300, h: 20 },
+    { x: canvas.width, y: g - 40, w: 300, h: 20 }
   ];
 }
-// ⭐ Neon Enemy Drawing
-function drawEnemies() {
-  enemies.forEach(e => {
-    ctx.save();
-    ctx.translate(e.x + e.w/2, e.y + e.h/2);
 
-    ctx.shadowColor = "#ff00ff";
-    ctx.shadowBlur = 20;
-
-    let core = "rgba(255,0,255,1)";
-    if (e.type === "runner") core = "rgba(0,255,0,1)";
-    if (e.type === "shooter") core = "rgba(0,200,255,1)";
-    if (e.type === "tank") core = "rgba(255,120,0,1)";
-
-    const grad = ctx.createRadialGradient(0,0,0,0,0,26);
-    grad.addColorStop(0, core);
-    grad.addColorStop(1, "rgba(255,0,255,0.1)");
-
-    ctx.fillStyle = grad;
-    ctx.beginPath();
-    ctx.ellipse(0,0,22,28,0,0,Math.PI*2);
-    ctx.fill();
-
-    // HP bar
-    ctx.fillStyle = "rgba(0,0,0,0.7)";
-    ctx.fillRect(-20, -35, 40, 5);
-    ctx.fillStyle = "#00ff88";
-    ctx.fillRect(-20, -35, 40 * (e.hp / e.maxHp), 5);
-
-    ctx.restore();
-  });
-}
-
-// ⭐ Neon Player Drawing
+// ⭐ Cartoon Soldier Drawing (grøn uniform + AK‑47)
 function drawPlayer() {
   ctx.save();
   ctx.translate(player.x + player.w/2, player.y + player.h/2);
   ctx.scale(player.facing, 1);
 
   ctx.shadowColor = "#00f5ff";
-  ctx.shadowBlur = 20;
-
-  // Body
-  ctx.fillStyle = "#00ffbb";
-  ctx.fillRect(-10, -30, 20, 40);
-
-  // Head
-  ctx.fillStyle = "#00f5ff";
-  ctx.beginPath();
-  ctx.arc(0, -45, 12, 0, Math.PI * 2);
-  ctx.fill();
-
-  // AK‑47
-  ctx.fillStyle = "#ffaa33";
-  ctx.fillRect(5, -25, 32, 6);
-  ctx.fillRect(30, -28, 12, 4);
-
-  ctx.restore();
-}
-
-// ⭐ Neon Bullets
-function drawBullets() {
-  ctx.save();
   ctx.shadowBlur = 15;
 
-  // Player bullets
-  ctx.shadowColor = "#ffff00";
-  ctx.fillStyle = "#ffff66";
-  bullets.forEach(b => {
-    ctx.fillRect(b.x, b.y, b.w, b.h);
-  });
+  // Body (grøn army uniform)
+  ctx.fillStyle = "#2e8b57";
+  ctx.fillRect(-15, -30, 30, 50);
 
-  // Enemy bullets
-  ctx.shadowColor = "#ff0066";
-  ctx.fillStyle = "#ff3366";
-  enemyBullets.forEach(b => {
-    ctx.beginPath();
-    ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
-    ctx.fill();
-  });
+  // Head (hudfarve)
+  ctx.fillStyle = "#ffe0bd";
+  ctx.beginPath();
+  ctx.arc(0, -50, 15, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Helmet (army green)
+  ctx.fillStyle = "#1f5f3f";
+  ctx.fillRect(-18, -65, 36, 12);
+
+  // AK‑47
+  ctx.fillStyle = "#3a2a1a"; // træ
+  ctx.fillRect(10, -20, 40, 6);
+  ctx.fillStyle = "#444"; // metal
+  ctx.fillRect(45, -22, 10, 4);
 
   ctx.restore();
 }
 
-// ⭐ Neon Platforms
+// ⭐ Platforms
 function drawPlatforms() {
   ctx.save();
   ctx.shadowColor = "#00f5ff";
@@ -315,53 +263,169 @@ function drawPlatforms() {
   ctx.restore();
 }
 
-// ⭐ Neon Background
+// ⭐ Background
 function drawBackground() {
-  const w = canvas.width;
-  const h = canvas.height;
-
-  const grad = ctx.createRadialGradient(
-    w/2, h/2, 0,
-    w/2, h/2, Math.max(w,h)
-  );
-  grad.addColorStop(0, "#050816");
-  grad.addColorStop(0.5, "#02030a");
-  grad.addColorStop(1, "#000000");
-
-  ctx.fillStyle = grad;
-  ctx.fillRect(0,0,w,h);
-
-  // Neon grid
-  ctx.save();
-  ctx.globalAlpha = 0.12;
-  ctx.strokeStyle = "#0ff";
-  ctx.lineWidth = 1;
-  const grid = 80;
-  for (let x = 0; x < w; x += grid) {
-    ctx.beginPath();
-    ctx.moveTo(x, 0);
-    ctx.lineTo(x, h);
-    ctx.stroke();
-  }
-  for (let y = 0; y < h; y += grid) {
-    ctx.beginPath();
-    ctx.moveTo(0, y);
-    ctx.lineTo(w, y);
-    ctx.stroke();
-  }
-  ctx.restore();
+  ctx.fillStyle = "#0a0f1f";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
 }
 
-// ⭐ DRAW EVERYTHING
+// ⭐ DRAW EVERYTHING (uden aliens endnu)
 function draw() {
   drawBackground();
   drawPlatforms();
-  drawEnemies();
   drawBullets();
   drawPlayer();
 }
 
-// ⭐ ENEMY UPDATE (with spawn-platform collision)
+// ⭐ SHOOT
+function shoot() {
+  if (!running || inQuiz || !canShoot || reloading) return;
+  if (ammo <= 0) { reload(); return; }
+
+  bullets.push({
+    x: player.x + player.w/2 + player.facing * 20,
+    y: player.y + player.h/2,
+    vx: player.facing * 700,
+    vy: 0,
+    w: 12, h: 4,
+    life: 0, maxLife: 1.2
+  });
+
+  ammo--;
+  updateAmmoHUD();
+  canShoot = false;
+  setTimeout(() => canShoot = true, 90);
+}
+
+// ⭐ RELOAD
+function reload() {
+  if (reloading) return;
+  reloading = true;
+  canShoot = false;
+  updateAmmoHUD();
+  setTimeout(() => {
+    ammo = maxAmmo;
+    reloading = false;
+    canShoot = true;
+    updateAmmoHUD();
+  }, 900);
+}
+
+function updateAmmoHUD() {
+  hudAmmo.innerHTML = reloading
+    ? "<strong>Ammo:</strong> Reloading..."
+    : `<strong>Ammo:</strong> ${ammo} / ${maxAmmo}`;
+}
+
+// ⭐ BULLETS UPDATE
+function updateBullets(dt) {
+  bullets.forEach(b => {
+    b.x += b.vx * dt;
+    b.life += dt;
+  });
+  bullets = bullets.filter(b => b.life < b.maxLife);
+}
+
+// ⭐ DRAW BULLETS
+function drawBullets() {
+  ctx.save();
+  ctx.shadowBlur = 15;
+  ctx.shadowColor = "#ffff00";
+  ctx.fillStyle = "#ffff66";
+  bullets.forEach(b => ctx.fillRect(b.x, b.y, b.w, b.h));
+  ctx.restore();
+}
+
+// ⭐ PLAYER UPDATE
+function updatePlayer(dt) {
+  const move = (keys.d ? 1 : 0) - (keys.a ? 1 : 0);
+  if (move !== 0) player.facing = move > 0 ? 1 : -1;
+  player.vx = move * player.speed;
+
+  if (keys.w && player.onGround) {
+    player.vy = -player.jumpPower;
+    player.onGround = false;
+  }
+
+  player.vy += 1400 * dt;
+  player.x += player.vx * dt;
+  player.y += player.vy * dt;
+
+  clampPlayer();
+
+  // Platform collision
+  player.onGround = false;
+  for (const p of platforms) {
+    if (player.x < p.x + p.w &&
+        player.x + player.w > p.x &&
+        player.y < p.y + p.h &&
+        player.y + player.h > p.y) {
+
+      const prevY = player.y - player.vy * dt;
+      if (prevY + player.h <= p.y) {
+        player.y = p.y - player.h;
+        player.vy = 0;
+        player.onGround = true;
+      }
+    }
+  }
+
+  if (player.y > canvas.height + 200) {
+    loseLife();
+  }
+}
+
+// ⭐ LOSE LIFE
+function loseLife() {
+  lives--;
+  hudLives.textContent = "Liv: " + lives;
+  if (lives <= 0) {
+    gameOver();
+    return;
+  }
+  player.x = canvas.width / 2;
+  player.y = canvas.height - 200;
+  player.vx = 0;
+  player.vy = 0;
+}
+
+// ⭐ UPDATE (uden aliens endnu)
+function update(dt) {
+  if (!running || inQuiz) return;
+
+  updatePlayer(dt);
+  updateBullets(dt);
+
+  draw();
+}
+// ⭐ ENEMY SPAWN
+function spawnEnemy() {
+  const g = canvas.height - 80;
+  const side = Math.random() < 0.5 ? -200 : canvas.width + 200;
+
+  const r = Math.random();
+  let type = "grunt";
+  if (r > 0.6 && r <= 0.8) type = "runner";
+  else if (r > 0.8 && r <= 0.93) type = "shooter";
+  else if (r > 0.93) type = "tank";
+
+  const baseSpeed = 40 + grade * 8 + kills * 0.3;
+  let hp = 30 + grade * 6 + kills * 0.4;
+
+  enemies.push({
+    x: side,
+    y: g - 60,
+    w: 32, h: 50,
+    vx: side < 0 ? baseSpeed : -baseSpeed,
+    vy: 0,
+    type,
+    hp,
+    maxHp: hp,
+    shootCooldown: 1 + Math.random() * 1.5
+  });
+}
+
+// ⭐ ENEMY UPDATE
 function updateEnemies(dt) {
   enemies.forEach(e => {
     const dir = player.x > e.x ? 1 : -1;
@@ -370,7 +434,7 @@ function updateEnemies(dt) {
 
     e.x += e.vx * dt;
 
-    // Collision with ALL platforms (including spawn platforms)
+    // Platform collision (inkl. spawn-platforme)
     for (const p of platforms) {
       if (e.x < p.x + p.w &&
           e.x + e.w > p.x &&
@@ -449,19 +513,6 @@ function handleCollisions() {
   });
 }
 
-// ⭐ GAME LOOP
-function loop(t) {
-  const dt = (t - last) / 1000;
-  last = t;
-
-  if (running && !inQuiz) {
-    update(dt);
-    draw();
-  }
-
-  requestAnimationFrame(loop);
-}
-
 // ⭐ QUIZ SYSTEM
 let currentQuestions = [];
 
@@ -511,24 +562,7 @@ submitQuizBtn.onclick = () => {
   running = true;
 };
 
-// ⭐ START / RESTART / GAME OVER
-startBtn.onclick = () => {
-  grade = Number(gradeSelect.value);
-  hudGrade.textContent = "Klasse: " + grade;
-  hudTop.style.display = "flex";
-  hudBottomLeft.style.display = "block";
-  startScreen.style.display = "none";
-  uiLayer.style.display = "none";
-  resetGame();
-  running = true;
-};
-
-restartBtn.onclick = () => {
-  gameOverScreen.style.display = "none";
-  startScreen.style.display = "block";
-  uiLayer.style.display = "flex";
-};
-
+// ⭐ GAME OVER
 function gameOver() {
   running = false;
   inQuiz = false;
@@ -537,11 +571,54 @@ function gameOver() {
   uiLayer.style.display = "flex";
 }
 
+// ⭐ GAME LOOP
+function loop(t) {
+  const dt = (t - last) / 1000;
+  last = t;
+
+  if (running && !inQuiz) {
+    update(dt);
+    updateEnemies(dt);
+    updateEnemyBullets(dt);
+    handleCollisions();
+
+    // Endless spawn
+    spawnTimer -= dt;
+    if (spawnTimer <= 0) {
+      spawnEnemy();
+      spawnTimer = Math.max(0.25, 1.2 - (kills * 0.02));
+    }
+
+    draw();
+  }
+
+  requestAnimationFrame(loop);
+}
+
+// ⭐ START / RESTART
+startBtn.onclick = () => {
+  grade = Number(gradeSelect.value);
+  hudGrade.textContent = "Klasse: " + grade;
+  hudTop.style.display = "flex";
+  hudBottomLeft.style.display = "block";
+  startScreen.style.display = "none";
+  uiLayer.style.display = "none";
+
+  createPlatforms();
+  player.x = canvas.width / 2;
+  player.y = canvas.height - 200;
+
+  running = true;
+};
+
+restartBtn.onclick = () => {
+  location.reload();
+};
+
 // ⭐ INIT
 startScreen.style.display = "block";
 uiLayer.style.display = "flex";
 requestAnimationFrame(loop);
-
 </script>
 </body>
 </html>
