@@ -12,19 +12,16 @@
     font-family: system-ui, sans-serif;
     color: #fff;
   }
-
   canvas {
     display: block;
     width: 100vw;
     height: 100vh;
   }
-
   #uiLayer {
     position: absolute; inset: 0;
     display: flex; align-items: center; justify-content: center;
     pointer-events: none;
   }
-
   #startScreen, #quizScreen, #gameOverScreen {
     pointer-events: auto;
     background: rgba(10,10,30,0.95);
@@ -36,7 +33,6 @@
     display: none;
     width: 350px;
   }
-
   button {
     width: 100%; padding: 10px 0;
     border-radius: 999px; border: none;
@@ -44,25 +40,21 @@
     font-weight: 700; cursor: pointer;
     margin-top: 10px;
   }
-
   #hudTop {
     position: absolute; top: 10px; left: 50%;
     transform: translateX(-50%);
     display: flex; gap: 16px;
     pointer-events: none;
   }
-
   #hudTop span {
     padding: 4px 10px; border-radius: 999px;
     background: rgba(0,0,0,0.5);
     border: 1px solid #00ffff55;
   }
-
   #hudBottomLeft {
     position: absolute; left: 16px; bottom: 12px;
     pointer-events: none;
   }
-
   #hudBottomLeft .box {
     background: rgba(0,0,0,0.6);
     border: 1px solid #00ffff55;
@@ -180,7 +172,6 @@ let lives = 3;
 let kills = 0;
 let score = 0;
 
-// ⭐ Cartoon Soldier Player
 const player = {
   x: 0, y: 0, w: 40, h: 70,
   vx: 0, vy: 0,
@@ -200,13 +191,14 @@ let maxAmmo = 30;
 let canShoot = true;
 let reloading = false;
 let spawnTimer = 0;
-// ⭐ Clamp player til banen
+
+// Clamp player til banen
 function clampPlayer() {
   if (player.x < 0) player.x = 0;
   if (player.x + player.w > canvas.width) player.x = canvas.width - player.w;
 }
 
-// ⭐ Mario‑agtige platforme + spawn‑platforme
+// Platforme + spawn‑platforme
 function createPlatforms() {
   const g = canvas.height - 80;
   platforms = [
@@ -214,46 +206,82 @@ function createPlatforms() {
     { x: canvas.width * 0.15, y: g - 180, w: 200, h: 20 },
     { x: canvas.width * 0.45, y: g - 260, w: 220, h: 20 },
     { x: canvas.width * 0.75, y: g - 180, w: 200, h: 20 },
-
-    // Spawn‑platforme udenfor banen
     { x: -300, y: g - 40, w: 300, h: 20 },
     { x: canvas.width, y: g - 40, w: 300, h: 20 }
   ];
 }
 
-// ⭐ Cartoon Soldier Drawing (grøn uniform + AK‑47)
+// Soldier
 function drawPlayer() {
   ctx.save();
   ctx.translate(player.x + player.w/2, player.y + player.h/2);
   ctx.scale(player.facing, 1);
-
   ctx.shadowColor = "#00f5ff";
   ctx.shadowBlur = 15;
 
-  // Body (grøn army uniform)
   ctx.fillStyle = "#2e8b57";
   ctx.fillRect(-15, -30, 30, 50);
 
-  // Head (hudfarve)
   ctx.fillStyle = "#ffe0bd";
   ctx.beginPath();
   ctx.arc(0, -50, 15, 0, Math.PI * 2);
   ctx.fill();
 
-  // Helmet (army green)
   ctx.fillStyle = "#1f5f3f";
   ctx.fillRect(-18, -65, 36, 12);
 
-  // AK‑47
-  ctx.fillStyle = "#3a2a1a"; // træ
+  ctx.fillStyle = "#3a2a1a";
   ctx.fillRect(10, -20, 40, 6);
-  ctx.fillStyle = "#444"; // metal
+  ctx.fillStyle = "#444";
   ctx.fillRect(45, -22, 10, 4);
 
   ctx.restore();
 }
 
-// ⭐ Platforms
+// Aliens
+function drawEnemies() {
+  enemies.forEach(e => {
+    ctx.save();
+    ctx.translate(e.x + e.w/2, e.y + e.h/2);
+    ctx.shadowColor = "#ff00ff";
+    ctx.shadowBlur = 20;
+
+    let core = "rgba(255,0,255,1)";
+    if (e.type === "runner") core = "rgba(0,255,0,1)";
+    if (e.type === "shooter") core = "rgba(0,200,255,1)";
+    if (e.type === "tank") core = "rgba(255,120,0,1)";
+
+    const grad = ctx.createRadialGradient(0,0,0,0,0,26);
+    grad.addColorStop(0, core);
+    grad.addColorStop(1, "rgba(255,0,255,0.1)");
+
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.ellipse(0,0,22,28,0,0,Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  });
+}
+
+// Bullets
+function drawBullets() {
+  ctx.save();
+  ctx.shadowBlur = 15;
+  ctx.shadowColor = "#ffff00";
+  ctx.fillStyle = "#ffff66";
+  bullets.forEach(b => ctx.fillRect(b.x, b.y, b.w, b.h));
+
+  ctx.shadowColor = "#ff0066";
+  ctx.fillStyle = "#ff3366";
+  enemyBullets.forEach(b => {
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+    ctx.fill();
+  });
+  ctx.restore();
+}
+
+// Platforms
 function drawPlatforms() {
   ctx.save();
   ctx.shadowColor = "#00f5ff";
@@ -263,21 +291,22 @@ function drawPlatforms() {
   ctx.restore();
 }
 
-// ⭐ Background
+// Background
 function drawBackground() {
   ctx.fillStyle = "#0a0f1f";
   ctx.fillRect(0,0,canvas.width,canvas.height);
 }
 
-// ⭐ DRAW EVERYTHING (uden aliens endnu)
+// Draw all
 function draw() {
   drawBackground();
   drawPlatforms();
+  drawEnemies();
   drawBullets();
   drawPlayer();
 }
 
-// ⭐ SHOOT
+// Shooting
 function shoot() {
   if (!running || inQuiz || !canShoot || reloading) return;
   if (ammo <= 0) { reload(); return; }
@@ -297,7 +326,6 @@ function shoot() {
   setTimeout(() => canShoot = true, 90);
 }
 
-// ⭐ RELOAD
 function reload() {
   if (reloading) return;
   reloading = true;
@@ -317,7 +345,6 @@ function updateAmmoHUD() {
     : `<strong>Ammo:</strong> ${ammo} / ${maxAmmo}`;
 }
 
-// ⭐ BULLETS UPDATE
 function updateBullets(dt) {
   bullets.forEach(b => {
     b.x += b.vx * dt;
@@ -326,17 +353,7 @@ function updateBullets(dt) {
   bullets = bullets.filter(b => b.life < b.maxLife);
 }
 
-// ⭐ DRAW BULLETS
-function drawBullets() {
-  ctx.save();
-  ctx.shadowBlur = 15;
-  ctx.shadowColor = "#ffff00";
-  ctx.fillStyle = "#ffff66";
-  bullets.forEach(b => ctx.fillRect(b.x, b.y, b.w, b.h));
-  ctx.restore();
-}
-
-// ⭐ PLAYER UPDATE
+// Player update
 function updatePlayer(dt) {
   const move = (keys.d ? 1 : 0) - (keys.a ? 1 : 0);
   if (move !== 0) player.facing = move > 0 ? 1 : -1;
@@ -353,14 +370,12 @@ function updatePlayer(dt) {
 
   clampPlayer();
 
-  // Platform collision
   player.onGround = false;
   for (const p of platforms) {
     if (player.x < p.x + p.w &&
         player.x + player.w > p.x &&
         player.y < p.y + p.h &&
         player.y + player.h > p.y) {
-
       const prevY = player.y - player.vy * dt;
       if (prevY + player.h <= p.y) {
         player.y = p.y - player.h;
@@ -375,7 +390,6 @@ function updatePlayer(dt) {
   }
 }
 
-// ⭐ LOSE LIFE
 function loseLife() {
   lives--;
   hudLives.textContent = "Liv: " + lives;
@@ -389,16 +403,8 @@ function loseLife() {
   player.vy = 0;
 }
 
-// ⭐ UPDATE (uden aliens endnu)
-function update(dt) {
-  if (!running || inQuiz) return;
+// ENEMIES
 
-  updatePlayer(dt);
-  updateBullets(dt);
-
-  draw();
-}
-// ⭐ ENEMY SPAWN
 function spawnEnemy() {
   const g = canvas.height - 80;
   const side = Math.random() < 0.5 ? -200 : canvas.width + 200;
@@ -425,16 +431,13 @@ function spawnEnemy() {
   });
 }
 
-// ⭐ ENEMY UPDATE
 function updateEnemies(dt) {
   enemies.forEach(e => {
     const dir = player.x > e.x ? 1 : -1;
     const baseSpeed = 40 + grade * 8 + kills * 0.3;
     e.vx = dir * baseSpeed;
-
     e.x += e.vx * dt;
 
-    // Platform collision (inkl. spawn-platforme)
     for (const p of platforms) {
       if (e.x < p.x + p.w &&
           e.x + e.w > p.x &&
@@ -444,7 +447,6 @@ function updateEnemies(dt) {
       }
     }
 
-    // Shooting
     e.shootCooldown -= dt;
     if (e.type === "shooter" || e.type === "tank") {
       if (e.shootCooldown <= 0) {
@@ -468,7 +470,6 @@ function updateEnemies(dt) {
   });
 }
 
-// ⭐ ENEMY BULLETS UPDATE
 function updateEnemyBullets(dt) {
   enemyBullets.forEach(b => {
     b.x += b.vx * dt;
@@ -478,9 +479,7 @@ function updateEnemyBullets(dt) {
   enemyBullets = enemyBullets.filter(b => b.life < b.maxLife);
 }
 
-// ⭐ COLLISIONS
 function handleCollisions() {
-  // Player bullets vs enemies
   bullets.forEach(b => {
     enemies.forEach(e => {
       if (b.x < e.x + e.w &&
@@ -501,7 +500,6 @@ function handleCollisions() {
   });
   enemies = enemies.filter(e => !e.dead);
 
-  // Enemy bullets vs player
   enemyBullets.forEach(b => {
     if (b.x > player.x &&
         b.x < player.x + player.w &&
@@ -513,7 +511,8 @@ function handleCollisions() {
   });
 }
 
-// ⭐ QUIZ SYSTEM
+// QUIZ
+
 let currentQuestions = [];
 
 function generateQuestion() {
@@ -562,7 +561,8 @@ submitQuizBtn.onclick = () => {
   running = true;
 };
 
-// ⭐ GAME OVER
+// GAME OVER
+
 function gameOver() {
   running = false;
   inQuiz = false;
@@ -571,31 +571,38 @@ function gameOver() {
   uiLayer.style.display = "flex";
 }
 
-// ⭐ GAME LOOP
+// UPDATE + LOOP
+
+function update(dt) {
+  if (!running || inQuiz) return;
+  updatePlayer(dt);
+  updateBullets(dt);
+  updateEnemies(dt);
+  updateEnemyBullets(dt);
+  handleCollisions();
+
+  spawnTimer -= dt;
+  if (spawnTimer <= 0) {
+    spawnEnemy();
+    spawnTimer = Math.max(0.25, 1.2 - (kills * 0.02));
+  }
+
+  if (kills > 0 && kills % 20 === 0 && !inQuiz) {
+    startQuiz();
+  }
+
+  draw();
+}
+
 function loop(t) {
   const dt = (t - last) / 1000;
   last = t;
-
-  if (running && !inQuiz) {
-    update(dt);
-    updateEnemies(dt);
-    updateEnemyBullets(dt);
-    handleCollisions();
-
-    // Endless spawn
-    spawnTimer -= dt;
-    if (spawnTimer <= 0) {
-      spawnEnemy();
-      spawnTimer = Math.max(0.25, 1.2 - (kills * 0.02));
-    }
-
-    draw();
-  }
-
+  update(dt);
   requestAnimationFrame(loop);
 }
 
-// ⭐ START / RESTART
+// START / RESTART
+
 startBtn.onclick = () => {
   grade = Number(gradeSelect.value);
   hudGrade.textContent = "Klasse: " + grade;
@@ -609,13 +616,14 @@ startBtn.onclick = () => {
   player.y = canvas.height - 200;
 
   running = true;
+  updateAmmoHUD();
 };
 
 restartBtn.onclick = () => {
   location.reload();
 };
 
-// ⭐ INIT
+// INIT
 startScreen.style.display = "block";
 uiLayer.style.display = "flex";
 requestAnimationFrame(loop);
